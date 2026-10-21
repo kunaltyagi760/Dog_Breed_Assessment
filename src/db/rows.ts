@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { breedResourceSchema, type BreedResource } from '@/api/schemas';
 import { COAT_CATEGORIES, SIZE_BANDS, type BreedListItem } from '@/domain/types';
 
 import { EMPTY_SYNC_META, type BreedRecord, type SyncMeta } from './repository';
@@ -71,5 +72,16 @@ export function parseSyncMeta(value: string | null | undefined): SyncMeta {
     return result.success ? result.data : EMPTY_SYNC_META;
   } catch {
     return EMPTY_SYNC_META;
+  }
+}
+
+// The payload is the API record as it was validated on the way in. It's checked
+// again on read, so a schema change can't let an old row crash the detail screen.
+export function parseBreedPayload(payload: string): BreedResource | null {
+  try {
+    const result = breedResourceSchema.safeParse(JSON.parse(payload));
+    return result.success ? result.data : null;
+  } catch {
+    return null;
   }
 }

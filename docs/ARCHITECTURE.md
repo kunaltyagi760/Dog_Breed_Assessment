@@ -17,7 +17,7 @@ flowchart LR
 ```
 
 1. Launch. `useHydration` opens the database, runs migrations, and loads the slim list rows, the groups and the sync metadata into the store. The root layout shows a spinner until that finishes, which takes a few milliseconds once data is cached.
-2. Deciding to sync. `useBreedSync` registers one React Query query whose `queryFn` is the sync. React Query is seeded with the persisted `lastSyncedAt`, so it knows how old the data is, and it refetches on mount, on reconnect (NetInfo) and on foreground (AppState) only when the data is stale. Stale means older than `EXPO_PUBLIC_STALE_AFTER_HOURS`, or the last attempt failed.
+2. Deciding to sync. `useBreedSync` registers one React Query query whose `queryFn` is the sync. React Query is seeded with the persisted `lastSyncedAt`, so it knows how old the data is, and it refetches on mount and on foreground (AppState) only when the data is stale. Stale means older than `EXPO_PUBLIC_STALE_AFTER_HOURS`, or the last attempt failed. Coming back online (NetInfo) always syncs, unless a sync succeeded within the last minute (`shouldSyncOnReconnect`). While offline, the app polls `NetInfo.refresh()` every 5 seconds, because the OS doesn't always announce that the network is back.
 3. Syncing. `syncBreeds` fetches groups and page 1 together. Page 1's `meta.pagination.last` says how many pages exist; pages 2 to N are fetched three at a time. Each request retries on its own with exponential backoff and jitter. Each page is normalized and written in its own transaction as soon as it arrives.
 4. Showing the result. After the sync, whether it succeeded or not, the store is reloaded from SQLite so the UI shows exactly what's saved.
 
@@ -112,6 +112,26 @@ The search text and the filter chips live in separate fields of `filterStore`. T
 
 Rows get only an id. `BreedRow` reads its breed from the store and loads the 200x200 `thumb` through expo-image with `recyclingKey`, so a recycled cell doesn't flash the previous breed's photo, and with `cachePolicy="memory-disk"`.
 
+## Detail screen
+
+```mermaid
+flowchart LR
+    Route["breeds/[id]"] --> Hook[useBreedDetail]
+    Hook -->|query 1: saved copy| Repo[(SQLite payload)]
+    Hook -->|query 2: GET /breeds/:id| API[Dog API]
+    API --> Save[save payload + list row]
+    Save --> Repo
+    Save -->|setQueryData| Hook
+    Save -->|upsertBreed| Store[breedStore]
+    Hook --> Tabs[BreedTabs: Overview / Traits / Gallery]
+```
+
+`useBreedDetail` returns the breed and one status: `ready` whenever any copy exists, otherwise `loading`, `offline` (not saved and no network), `missing` (the API returned 404) or `error`. The route maps each status to a screen, so there's no combination of flags to get wrong.
+
+The saved payload is re-validated with the same zod schema and run through the same `toBreed` as during a sync, so the detail screen and the list can't interpret a record differently.
+
+Tabs use `react-native-tab-view`. Each tab sits inside its own error boundary, and the Gallery tab is lazy. `ImagePager` is shared by the gallery (`medium`, cover) and the full-screen viewer (`large`, contain), and keeps only the visible photo and its neighbours mounted.
+
 ## State
 
 `useBreedStore` holds normalized data:
@@ -132,6 +152,6 @@ The list passes only ids to FlashList. Each row selects its own breed from `byId
 ## Errors
 
 - The root layout exports Expo Router's `ErrorBoundary`, which catches render errors that escape the screens.
-- The list body is wrapped in `react-error-boundary`.
+- The list body and each detail tab are wrapped in `react-error-boundary`, so one broken tab doesn't take the others down.
 - If the database can't be opened, the root layout shows an error screen with a retry button.
 - API errors are typed: `NetworkError` and `HttpError` 5xx/429 are retried, while other 4xx errors and `InvalidResponseError` fail immediately.

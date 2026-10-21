@@ -30,6 +30,7 @@ type BreedState = {
   syncMeta: SyncMeta;
   hydrated: boolean;
   setSnapshot(snapshot: BreedSnapshot): void;
+  upsertBreed(item: BreedListItem): void;
 };
 
 export const useBreedStore = create<BreedState>((set) => ({
@@ -39,4 +40,17 @@ export const useBreedStore = create<BreedState>((set) => ({
   hydrated: false,
   setSnapshot: ({ breeds, groups, syncMeta }) =>
     set({ breeds: normalize(breeds), groups: normalize(groups), syncMeta, hydrated: true }),
+  upsertBreed: (item) =>
+    set(({ breeds }) => {
+      const byId = { ...breeds.byId, [item.id]: item };
+      const isNew = !(item.id in breeds.byId);
+      const allIds = isNew
+        ? [...breeds.allIds, item.id].sort((a, b) =>
+            (byId[a]?.name ?? '').localeCompare(byId[b]?.name ?? '', undefined, {
+              sensitivity: 'base',
+            }),
+          )
+        : breeds.allIds;
+      return { breeds: { byId, allIds } };
+    }),
 }));

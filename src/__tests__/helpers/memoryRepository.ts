@@ -1,9 +1,13 @@
+import type { BreedResource } from '@/api/schemas';
 import { EMPTY_SYNC_META, type BreedRepository, type SyncMeta } from '@/db/repository';
 import type { BreedListItem, Group } from '@/domain/types';
 
 /** BreedRepository backed by plain maps, for testing the sync engine without SQLite. */
 export function createMemoryRepository() {
-  const breeds = new Map<string, { item: BreedListItem; syncedAt: number }>();
+  const breeds = new Map<
+    string,
+    { item: BreedListItem; resource: BreedResource | null; syncedAt: number }
+  >();
   let groups: Group[] = [];
   let meta: SyncMeta = EMPTY_SYNC_META;
 
@@ -12,7 +16,7 @@ export function createMemoryRepository() {
       groups = next;
     },
     async saveBreeds(records, syncedAt) {
-      for (const { item } of records) breeds.set(item.id, { item, syncedAt });
+      for (const { item, resource } of records) breeds.set(item.id, { item, resource, syncedAt });
     },
     async deleteBreedsSyncedBefore(syncedAt) {
       for (const [id, entry] of breeds) {
@@ -21,6 +25,9 @@ export function createMemoryRepository() {
     },
     async loadListItems() {
       return [...breeds.values()].map((entry) => entry.item);
+    },
+    async loadBreed(id) {
+      return breeds.get(id)?.resource ?? null;
     },
     async loadGroups() {
       return groups;
@@ -35,8 +42,11 @@ export function createMemoryRepository() {
 
   return {
     repo,
-    seedBreed(item: BreedListItem, syncedAt: number) {
-      breeds.set(item.id, { item, syncedAt });
+    seedBreed(item: BreedListItem, syncedAt: number, resource: BreedResource | null = null) {
+      breeds.set(item.id, { item, resource, syncedAt });
+    },
+    syncedAtOf(id: string) {
+      return breeds.get(id)?.syncedAt;
     },
     seedMeta(next: SyncMeta) {
       meta = next;

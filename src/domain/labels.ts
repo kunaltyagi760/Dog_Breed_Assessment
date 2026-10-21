@@ -1,4 +1,4 @@
-import type { BreedListItem, CoatCategory, SizeBand } from './types';
+import type { BreedListItem, CoatCategory, ScoreTrait, SizeBand } from './types';
 
 export const SIZE_LABELS: Record<SizeBand, string> = {
   small: 'Small',
@@ -14,6 +14,19 @@ export const COAT_LABELS: Record<CoatCategory, string> = {
   wire: 'Wire',
   hairless: 'Hairless',
   unknown: 'Unknown',
+};
+
+export const TRAIT_LABELS: Record<ScoreTrait, string> = {
+  energy: 'Energy',
+  trainability: 'Trainability',
+  barking: 'Barking',
+  grooming: 'Grooming needs',
+  shedding: 'Shedding',
+  drooling: 'Drooling',
+  good_with_children: 'Good with children',
+  good_with_dogs: 'Good with other dogs',
+  good_with_strangers: 'Good with strangers',
+  apartment_friendly: 'Apartment friendly',
 };
 
 /** One-line description for a list row, e.g. "Medium · Wire coat · Hypoallergenic". */

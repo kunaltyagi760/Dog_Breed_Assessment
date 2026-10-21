@@ -4,7 +4,14 @@ import { z } from 'zod';
 import type { Group } from '@/domain/types';
 
 import type { BreedRepository } from './repository';
-import { LIST_COLUMNS, listRowSchema, parseSyncMeta, recordToParams, rowToListItem } from './rows';
+import {
+  LIST_COLUMNS,
+  listRowSchema,
+  parseBreedPayload,
+  parseSyncMeta,
+  recordToParams,
+  rowToListItem,
+} from './rows';
 
 const UPSERT_BREED = `
   INSERT OR REPLACE INTO breeds (
@@ -75,6 +82,14 @@ export function createSqliteBreedRepository(db: SQLiteDatabase): BreedRepository
         const result = listRowSchema.safeParse(row);
         return result.success ? [rowToListItem(result.data)] : [];
       });
+    },
+
+    async loadBreed(id) {
+      const row = await db.getFirstAsync<{ payload: string }>(
+        'SELECT payload FROM breeds WHERE id = ?',
+        id,
+      );
+      return row ? parseBreedPayload(row.payload) : null;
     },
 
     async loadGroups() {

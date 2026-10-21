@@ -1,5 +1,11 @@
 import { EMPTY_SYNC_META } from '@/db/repository';
-import { listRowSchema, parseSyncMeta, recordToParams, rowToListItem } from '@/db/rows';
+import {
+  listRowSchema,
+  parseBreedPayload,
+  parseSyncMeta,
+  recordToParams,
+  rowToListItem,
+} from '@/db/rows';
 import { toBreed, toListItem } from '@/domain/normalize';
 
 import { breedResource } from '../helpers/fixtures';
@@ -35,5 +41,17 @@ describe('parseSyncMeta', () => {
     expect(parseSyncMeta(null)).toEqual(EMPTY_SYNC_META);
     expect(parseSyncMeta('{not json')).toEqual(EMPTY_SYNC_META);
     expect(parseSyncMeta('{"lastSyncedAt":"yesterday"}')).toEqual(EMPTY_SYNC_META);
+  });
+});
+
+describe('parseBreedPayload', () => {
+  it('reads back a stored record', () => {
+    const resource = breedResource('p');
+    expect(parseBreedPayload(JSON.stringify(resource))?.id).toBe('p');
+  });
+
+  it('returns null for corrupt or outdated payloads', () => {
+    expect(parseBreedPayload('{oops')).toBeNull();
+    expect(parseBreedPayload(JSON.stringify({ id: 'p' }))).toBeNull();
   });
 });

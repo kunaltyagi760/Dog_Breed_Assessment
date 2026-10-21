@@ -22,6 +22,8 @@ export function createFakeServer(breeds: unknown[]) {
   const pageFailures = new Map<number, number>();
   let groupsStatus = 200;
   let totalOverride: number | null = null;
+  const breedOverrides = new Map<string, unknown>();
+  const breedStatuses = new Map<string, number>();
   const requests: string[] = [];
 
   const fetchFn: FetchLike = async (url) => {
@@ -31,6 +33,19 @@ export function createFakeServer(breeds: unknown[]) {
       return groupsStatus === 200
         ? json({ data: [rawGroup('g-herding', 'Herding Group'), rawGroup('g-toy', 'Toy Group')] })
         : json({}, groupsStatus);
+    }
+
+    const single = url.match(/\/breeds\/([^/?]+)$/);
+    if (single) {
+      const id = decodeURIComponent(single[1] ?? '');
+      const status = breedStatuses.get(id);
+      if (status) return json({}, status);
+      const breed =
+        breedOverrides.get(id) ??
+        breeds.find(
+          (item) => typeof item === 'object' && item !== null && 'id' in item && item.id === id,
+        );
+      return breed ? json({ data: breed }) : json({ errors: [{ status: '404' }] }, 404);
     }
 
     const page = queryNumber(url, 'page\\[number\\]');
@@ -67,6 +82,13 @@ export function createFakeServer(breeds: unknown[]) {
     },
     reportTotal(total: number) {
       totalOverride = total;
+    },
+    /** Serve a different record for GET /breeds/:id than the list pages do. */
+    setBreed(id: string, breed: unknown) {
+      breedOverrides.set(id, breed);
+    },
+    failBreed(id: string, status: number) {
+      breedStatuses.set(id, status);
     },
   };
 }

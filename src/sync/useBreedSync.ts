@@ -1,23 +1,22 @@
 import { onlineManager, useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
-import { createDogApi } from '@/api/dogApi';
+import { dogApi } from '@/api/client';
 import { env } from '@/config/env';
 import { getBreedRepository } from '@/db/database';
 import { useBreedStore } from '@/store/breedStore';
 
 import { hydrateStore } from './hydrate';
+import { shouldSyncOnReconnect } from './syncPolicy';
 import { syncBreeds } from './syncBreeds';
 
 export const BREED_SYNC_KEY = ['breeds', 'sync'] as const;
 
 const STALE_MS = env.staleAfterHours * 60 * 60 * 1000;
-const api = createDogApi({ baseUrl: env.apiBaseUrl });
-
 async function runSync() {
   const repo = await getBreedRepository();
   try {
-    await syncBreeds({ api, repo, pageSize: env.pageSize });
+    await syncBreeds({ api: dogApi, repo, pageSize: env.pageSize });
   } finally {
     // Pages saved before a failure are still worth showing.
     await hydrateStore(repo);
@@ -27,9 +26,10 @@ async function runSync() {
 
 /**
  * React Query decides *when* to sync; syncBreeds decides *how*.
- * The query is seeded with the persisted sync time, so a fresh launch only hits
- * the network when the data is older than STALE_MS. A failed or partial sync
- * makes it stale immediately, so reconnecting or reopening the app retries it.
+ * The query is seeded with the persisted sync time, so launching or returning
+ * to the app only hits the network when the data is older than STALE_MS (or the
+ * last sync failed). Reconnecting is different: the brief asks for a sync when
+ * the network returns, so that happens regardless of age.
  */
 export function useBreedSync() {
   const initialMeta = useBreedStore((state) => state.syncMeta);
@@ -43,7 +43,8 @@ export function useBreedSync() {
     // Each page already retries with backoff inside syncBreeds.
     retry: false,
     refetchOnMount: true,
-    refetchOnReconnect: true,
+    refetchOnReconnect: () =>
+      shouldSyncOnReconnect(useBreedStore.getState().syncMeta, Date.now()) ? 'always' : false,
     refetchOnWindowFocus: true,
   });
 

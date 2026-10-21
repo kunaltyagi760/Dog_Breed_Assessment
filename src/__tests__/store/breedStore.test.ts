@@ -1,6 +1,12 @@
 import { EMPTY_SYNC_META } from '@/db/repository';
 import { normalize, useBreedStore } from '@/store/breedStore';
 
+import { listItem } from '../helpers/fixtures';
+
+// Each test starts from a brand-new store, whatever order the tests run in.
+const initialState = useBreedStore.getState();
+beforeEach(() => useBreedStore.setState(initialState, true));
+
 describe('normalize', () => {
   it('indexes by id and keeps the original order', () => {
     const result = normalize([
@@ -34,5 +40,28 @@ describe('useBreedStore', () => {
     const state = useBreedStore.getState();
     expect(state.hydrated).toBe(true);
     expect(state.groups.byId.g?.label).toBe('Toy');
+  });
+});
+
+describe('upsertBreed', () => {
+  beforeEach(() => {
+    useBreedStore.getState().setSnapshot({
+      breeds: [listItem('Akita'), listItem('Pug')],
+      groups: [],
+      syncMeta: EMPTY_SYNC_META,
+    });
+  });
+
+  it('replaces an existing breed without reordering', () => {
+    useBreedStore.getState().upsertBreed(listItem('Pug', { name: 'Pug', hypoallergenic: true }));
+
+    const { breeds } = useBreedStore.getState();
+    expect(breeds.allIds).toEqual(['Akita', 'Pug']);
+    expect(breeds.byId.Pug?.hypoallergenic).toBe(true);
+  });
+
+  it('inserts a new breed in name order', () => {
+    useBreedStore.getState().upsertBreed(listItem('Beagle'));
+    expect(useBreedStore.getState().breeds.allIds).toEqual(['Akita', 'Beagle', 'Pug']);
   });
 });

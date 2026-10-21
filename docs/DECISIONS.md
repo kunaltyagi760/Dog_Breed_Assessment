@@ -42,11 +42,13 @@ I added Hairless as a fifth chip. Folding those breeds into "short" would be wro
 A sync runs when:
 
 1. the app launches with no cached data, or with data older than `EXPO_PUBLIC_STALE_AFTER_HOURS`;
-2. NetInfo reports the device coming back online while the app is open;
+2. the device comes back online while the app is open, whatever the age of the data (unless a sync succeeded less than a minute ago, so a connection that keeps dropping doesn't re-download everything each time);
 3. the app returns to the foreground and the data is stale;
 4. the user pulls to refresh.
 
 I chose not to register an OS background task (`expo-background-task`). Breed data changes rarely, and iOS decides on its own when background tasks run, so it's a poor fit for "sync when the network returns". It would also add a native capability the app doesn't need. Syncing on reconnect while the app is open covers the user story. If this needed fresher data, OS background sync is the next step.
+
+Noticing the reconnect turned out to need help. NetInfo waits for the OS to announce network changes, and once it has reported "offline" it stops checking on its own. In the iOS simulator the "back online" announcement often never arrives, so the offline banner stayed up until the app was backgrounded. While the app thinks it's offline, it now calls `NetInfo.refresh()` every 5 seconds; that's one cheap native call, it only runs while offline, and it stops as soon as the connection is seen again.
 
 ### What "last synced" means
 
@@ -82,6 +84,20 @@ Search runs 250 ms after the last keystroke. Filtering 283 rows is fast enough t
 The list is one flat array of group headers and breed rows, with the headers' positions passed to FlashList as `stickyHeaderIndices`. FlashList recycles headers and rows separately (`getItemType`), so a header cell is never reused for a breed. Groups are sorted by their short label, and a breed whose group isn't known goes into a trailing "Other" section instead of disappearing.
 
 The list is given a `key` built from the search, the filters and the dataset size, so every new result set mounts a fresh FlashList. I added this after a bug: FlashList only recalculates which header is pinned while you scroll, so when the list jumped from a handful of rows back to all 283 it could keep a stale header ("Working", the last group) pinned over the list. Remounting costs about 15 rows of rendering and removes that whole class of problem, along with the need to scroll back to the top by hand.
+
+### Detail screen: saved copy first, then a single-breed refresh
+
+The detail screen reads the breed from SQLite and renders straight away, online or not. In parallel it calls `GET /breeds/:id`. When that answers, the new record is saved (payload and list row together) and replaces what's on screen, and the list row in the store is updated too, so going back to the list shows the same data. If the refresh fails, the saved copy simply stays; a breed that isn't saved at all gets an explicit "not saved on this device" or "breed not found" message instead of an endless spinner. The refresh counts as fresh for 10 minutes, so flicking between breeds doesn't re-download them.
+
+Both reads go through React Query, which needed one non-obvious setting: queries are paused while offline by default, and that includes a query that only reads SQLite. The saved-copy query uses `networkMode: 'always'`. A test caught this before it shipped as "detail screen spins forever offline".
+
+### Traits as scales
+
+The ten 1 to 5 scores are drawn as five-segment bars, grouped into "Living with", "Care" and "Activity" so the screen reads as answers to questions rather than a table. Daily exercise isn't on a 1 to 5 scale, so it gets six 20-minute segments (the data tops out at 120 minutes) with the actual minutes next to it. Every bar is an accessible `progressbar` with its value, so a screen reader says "Energy: 4/5". A missing score shows empty segments and "No data" rather than a zero, because zero would be a claim the API never made.
+
+### Gallery and attribution
+
+The gallery pages through `medium` (600px) photos and shows "3 of 10" with the current photo's credit underneath: author, licence and source, the last two as links. When the API has no author (61 photos), the credit says "an unknown author" instead of dropping the line, because the licence still requires attribution. Tapping a photo opens a full-screen viewer, and that's the only place the `large` (1200px) variant is requested. The pager keeps at most three photos mounted, and the Gallery tab is lazy, so its photos don't download at all unless someone opens it. Links only open if they're `http(s)` URLs.
 
 ## Performance: how heavy each row is
 

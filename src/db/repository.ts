@@ -28,6 +28,8 @@ export type BreedRepository = {
   /** Removes breeds that weren't seen by the sync that started at `syncedAt`. */
   deleteBreedsSyncedBefore(syncedAt: number): Promise<void>;
   loadListItems(): Promise<BreedListItem[]>;
+  /** The full validated API record for one breed, or null if it isn't cached. */
+  loadBreed(id: string): Promise<BreedResource | null>;
   loadGroups(): Promise<Group[]>;
   getSyncMeta(): Promise<SyncMeta>;
   setSyncMeta(meta: SyncMeta): Promise<void>;
