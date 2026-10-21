@@ -48,6 +48,12 @@ A sync runs when:
 
 I chose not to register an OS background task (`expo-background-task`). Breed data changes rarely, and iOS decides on its own when background tasks run, so it's a poor fit for "sync when the network returns". It would also add a native capability the app doesn't need. Syncing on reconnect while the app is open covers the user story. If this needed fresher data, OS background sync is the next step.
 
+### What "last synced" means
+
+"Last synced" is the time of the last sync that fetched every page. A partial sync still saves the pages that worked, but it doesn't move that timestamp, and it records which pages failed. Showing "Last synced just now" when two pages are a week old would be misleading. A partial or failed sync also marks the data as stale, so the next reconnect or foreground retries it straight away instead of waiting out the 6 hours.
+
+A single malformed breed is skipped and counted instead of failing its whole page. Losing one breed until the next sync is better than losing 48.
+
 ### Size bands from weight, falling back to height
 
 The API has no size field. For each breed I average the male and female maximum weight and bucket it:
@@ -59,7 +65,7 @@ The API has no size field. For each breed I average the male and female maximum 
 | Large  | 25 to 45 kg |
 | Giant  | > 45 kg     |
 
-The cut-offs come from the real distribution of male max weight (quartiles roughly 12 / 25 / 35 kg, max 113 kg), with Giant sitting above the usual "large dog" line. When weight is missing, I fall back to height at the withers.
+The cut-offs come from the real distribution of male max weight (quartiles roughly 12 / 25 / 35 kg, max 113 kg), with Giant sitting above the usual "large dog" line. When weight is missing, I fall back to height at the withers (under 35 cm small, under 53 medium, under 65 large, otherwise giant). On the live data this gives 54 small, 88 medium, 104 large and 37 giant breeds.
 
 ### Filter semantics
 
@@ -109,7 +115,9 @@ I seriously considered Redux Toolkit, since `createEntityAdapter` gives you a no
 
 ### Persistence: expo-sqlite
 
-It ships in Expo Go, so the quick start still works. A sync writes 283 breeds and 2,354 image rows, and a transaction lets that happen atomically or not at all. With AsyncStorage I'd be serialising one large JSON blob on every write. SQLite also gives me a real schema: typed columns for the fields the list and filters need, and the full breed JSON in a `payload` column for the detail screen. The schema is in `ARCHITECTURE.md`.
+It ships in Expo Go, so the quick start still works. Each page of 48 breeds is written in one transaction, so a crash mid-write never leaves half a page behind. With AsyncStorage I'd be rewriting one 1.8 MB JSON blob on every save. SQLite also gives me a real schema: typed columns for the fields the list and filters need, and the validated API record in a `payload` column for the detail screen. The schema is in `ARCHITECTURE.md`.
+
+Images don't get their own table. They're only ever read together with their breed, so they stay inside `payload`; the list's thumbnail URL is copied into a column because the list never opens the payload.
 
 I ruled out WatermelonDB because it needs a native build and its sync protocol expects a backend that speaks it. MMKV and op-sqlite are faster but also need a native build. With 283 rows, read speed is not the bottleneck.
 

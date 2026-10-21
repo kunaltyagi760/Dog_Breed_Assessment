@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { spacing } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 
 import { AppText } from './AppText';
 import { Button } from './Button';
@@ -15,8 +15,12 @@ type Props = {
 
 // Shared layout for empty, error and not-found states.
 function StateMessageBase({ title, message, actionLabel, onAction }: Props) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.container} accessibilityRole="summary">
+    <View
+      style={[styles.container, { backgroundColor: colors.background }]}
+      accessibilityRole="summary"
+    >
       <AppText variant="subtitle" style={styles.center}>
         {title}
       </AppText>
