@@ -1,6 +1,6 @@
-import { FlashList, type FlashListRef } from '@shopify/flash-list';
+import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -31,9 +31,8 @@ export default function BreedListScreen() {
   const { setQuery, reset } = useFilterStore.getState();
   const isOnline = useIsOnline();
   const { isSyncing, error, refreshing, refresh } = useBreedSync();
-  const { rows, stickyIndices, appliedQuery, resultCount, totalCount } = useFilteredBreeds();
+  const { rows, stickyIndices, listKey, resultCount, totalCount } = useFilteredBreeds();
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const listRef = useRef<FlashListRef<BreedSectionRow>>(null);
 
   const problem = lastError ?? error?.message ?? null;
   const activeCount = activeFilterCount(filters);
@@ -46,11 +45,6 @@ export default function BreedListScreen() {
   const openBreed = useCallback((id: string) => {
     router.push({ pathname: '/breeds/[id]', params: { id } });
   }, []);
-
-  // A new result set should start from the top, not wherever the old one was scrolled to.
-  useEffect(() => {
-    listRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }, [filters, appliedQuery]);
 
   const renderItem = useCallback(
     ({ item }: { item: BreedSectionRow }) =>
@@ -75,7 +69,7 @@ export default function BreedListScreen() {
   } else if (totalCount > 0) {
     content = (
       <FlashList
-        ref={listRef}
+        key={listKey}
         data={rows}
         keyExtractor={keyExtractor}
         getItemType={getItemType}

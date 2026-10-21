@@ -81,6 +81,8 @@ Search runs 250 ms after the last keystroke. Filtering 283 rows is fast enough t
 
 The list is one flat array of group headers and breed rows, with the headers' positions passed to FlashList as `stickyHeaderIndices`. FlashList recycles headers and rows separately (`getItemType`), so a header cell is never reused for a breed. Groups are sorted by their short label, and a breed whose group isn't known goes into a trailing "Other" section instead of disappearing.
 
+The list is given a `key` built from the search, the filters and the dataset size, so every new result set mounts a fresh FlashList. I added this after a bug: FlashList only recalculates which header is pinned while you scroll, so when the list jumped from a handful of rows back to all 283 it could keep a stale header ("Working", the last group) pinned over the list. Remounting costs about 15 rows of rendering and removes that whole class of problem, along with the need to scroll back to the top by hand.
+
 ## Performance: how heavy each row is
 
 Any virtualized list copes with 283 rows. The cost here comes from the size of each record: nested traits, a coat object, origin, kennel clubs, sources and up to 10 images, each with four URLs and an attribution block. I measured the live data at a median of about 7 KB of JSON per breed (2.4 KB to 11 KB), 1.8 MB for the whole set.

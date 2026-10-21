@@ -52,6 +52,21 @@ describe('useFilteredBreeds', () => {
     expect(result.current.resultCount).toBe(1);
   });
 
+  it('changes the list key when results change, and only then', async () => {
+    const { result, rerender } = await renderHook(() => useFilteredBreeds());
+    const initialKey = result.current.listKey;
+
+    await rerender({});
+    expect(result.current.listKey).toBe(initialKey);
+
+    await act(() => useFilterStore.getState().toggleSize('small'));
+    const filteredKey = result.current.listKey;
+    expect(filteredKey).not.toBe(initialKey);
+
+    await act(() => useFilterStore.getState().clearFilters());
+    expect(result.current.listKey).toBe(initialKey);
+  });
+
   it('clears the search without waiting', async () => {
     const { result } = await renderHook(() => useFilteredBreeds());
     await act(() => useFilterStore.getState().setQuery('pug'));

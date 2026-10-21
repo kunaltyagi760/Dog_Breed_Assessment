@@ -29,7 +29,7 @@ export function useFilteredBreeds() {
     }
     return {
       ...buildSections(items, groups.byId),
-      appliedQuery,
+      listKey: `${breeds.allIds.length}|${appliedQuery}|${JSON.stringify(filters)}`,
       resultCount: items.length,
       totalCount: breeds.allIds.length,
     };
