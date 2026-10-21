@@ -10,7 +10,7 @@ describe('ThemeToggle', () => {
     const setColorScheme = jest.spyOn(Appearance, 'setColorScheme');
     await render(<ThemeToggle />);
 
-    fireEvent.press(screen.getByRole('button', { name: 'Switch to dark theme' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Switch to dark theme' }));
 
     expect(setColorScheme).toHaveBeenCalledWith('dark');
     expect(useThemeStore.getState().preference).toBe('dark');

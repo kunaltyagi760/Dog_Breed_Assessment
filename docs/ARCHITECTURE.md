@@ -94,6 +94,24 @@ The typed columns are the list projection, so the list, search and filters never
 
 Rows coming back from SQLite go through a zod schema too. `getAllAsync<T>()` only casts, and I didn't want unchecked data entering the store.
 
+## List screen
+
+```mermaid
+flowchart LR
+    BS[breedStore] --> H[useFilteredBreeds]
+    FS[filterStore] -->|filters, debounced query| H
+    H -->|createBreedMatcher| M[matching items]
+    M -->|buildSections| R[headers + rows]
+    R --> FL[FlashList]
+    FL -->|id| Row[BreedRow reads its breed from breedStore]
+```
+
+`useFilteredBreeds` compiles the filters into one predicate (`createBreedMatcher`), runs it over the slim rows, and groups the matches with `buildSections`. Both are plain functions in `src/domain`, so they're tested without React. The result is memoized on the store slices, so scrolling, the "Last synced" label ticking over, or opening the sheet doesn't refilter anything.
+
+The search text and the filter chips live in separate fields of `filterStore`. Typing replaces `query`, but the `filters` object stays the same, so components that only care about chips don't re-render on each keystroke.
+
+Rows get only an id. `BreedRow` reads its breed from the store and loads the 200x200 `thumb` through expo-image with `recyclingKey`, so a recycled cell doesn't flash the previous breed's photo, and with `cachePolicy="memory-disk"`.
+
 ## State
 
 `useBreedStore` holds normalized data:
@@ -106,6 +124,8 @@ hydrated: boolean
 ```
 
 The list passes only ids to FlashList. Each row selects its own breed from `byId`, so when one breed changes, only that row re-renders.
+
+`useFilterStore` holds `query` (the raw search text) and `filters` (group ids, sizes, coats, hypoallergenic, and a minimum score per "good with" trait). It isn't persisted, so every launch starts unfiltered.
 
 `useThemeStore` holds the theme preference (`system`, `light` or `dark`), saved with `expo-sqlite/kv-store`. Choosing a theme calls `Appearance.setColorScheme`, so `useColorScheme()`, native dialogs and the keyboard all follow the toggle in the header. The preference is applied before the first render, so a saved dark theme doesn't flash light on launch.
 

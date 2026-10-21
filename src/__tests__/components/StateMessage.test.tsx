@@ -19,7 +19,7 @@ describe('StateMessage', () => {
     const onAction = jest.fn();
     await render(<StateMessage title="Empty" actionLabel="Reload" onAction={onAction} />);
 
-    fireEvent.press(screen.getByRole('button', { name: 'Reload' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Reload' }));
     expect(onAction).toHaveBeenCalledTimes(1);
   });
 });
@@ -30,7 +30,7 @@ describe('ErrorFallback', () => {
     await render(<ErrorFallback error={new Error('Network down')} onRetry={onRetry} />);
 
     expect(screen.getByText('Network down')).toBeOnTheScreen();
-    fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalled();
   });
 

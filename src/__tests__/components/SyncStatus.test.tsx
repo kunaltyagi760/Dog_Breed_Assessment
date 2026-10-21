@@ -55,7 +55,7 @@ describe('SyncStatus', () => {
     expect(
       screen.getByText("2 of 6 pages couldn't be refreshed. Showing saved data."),
     ).toBeOnTheScreen();
-    fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
     expect(onRetry).toHaveBeenCalled();
   });
 

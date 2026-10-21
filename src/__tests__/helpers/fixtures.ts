@@ -1,4 +1,5 @@
 import { breedResourceSchema, type BreedResource } from '@/api/schemas';
+import type { BreedListItem } from '@/domain/types';
 
 type RawAttributes = Record<string, unknown>;
 
@@ -63,4 +64,21 @@ export function breedResource(id: string, attributes?: RawAttributes): BreedReso
 
 export function rawGroup(id: string, name: string) {
   return { id, type: 'group', attributes: { name }, relationships: { breeds: { data: [] } } };
+}
+
+export function listItem(id: string, overrides: Partial<BreedListItem> = {}): BreedListItem {
+  return {
+    id,
+    name: id,
+    groupId: 'g-herding',
+    thumbUrl: null,
+    sizeBand: 'medium',
+    coatCategory: 'short',
+    hypoallergenic: false,
+    goodWithChildren: 3,
+    goodWithDogs: 3,
+    goodWithStrangers: 3,
+    searchText: id.toLowerCase(),
+    ...overrides,
+  };
 }

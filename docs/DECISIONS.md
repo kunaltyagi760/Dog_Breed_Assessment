@@ -69,7 +69,17 @@ The cut-offs come from the real distribution of male max weight (quartiles rough
 
 ### Filter semantics
 
-Within one filter, chips combine with OR (Herding or Toy). Across filters they combine with AND (Herding or Toy, and also Small). This is what people expect from e-commerce style filters. The trait threshold is a single minimum score from 1 to 5 for good with children, dogs and strangers.
+Within one filter, chips combine with OR (Herding or Toy). Across filters they combine with AND (Herding or Toy, and also Small). This is what people expect from e-commerce style filters. Each of the three "good with" traits has its own minimum score (Any, 2+, 3+, 4+, 5), so "good with children 4+ and good with dogs 3+" is possible. A breed with no score for a trait doesn't pass a threshold on that trait. Hypoallergenic is Any / Yes / No rather than two checkboxes, since ticking both would mean the same as Any.
+
+Filters apply the moment a chip is tapped, and the sheet's button shows the live count ("Show 23 breeds"). I preferred that to an Apply button: you see straight away when a combination leaves nothing.
+
+### Search
+
+Search runs 250 ms after the last keystroke. Filtering 283 rows is fast enough to do on every key, but the list would reshuffle while you type. Clearing the search skips the delay. The text is matched against a precomputed `search_text` column (name plus other names, lowercased, accents removed), so "vendeen" finds "Grand Basset Griffon Vendéen" and "alsatian" finds the German Shepherd Dog. With several words, every word has to match, in any order.
+
+### List layout
+
+The list is one flat array of group headers and breed rows, with the headers' positions passed to FlashList as `stickyHeaderIndices`. FlashList recycles headers and rows separately (`getItemType`), so a header cell is never reused for a breed. Groups are sorted by their short label, and a breed whose group isn't known goes into a trailing "Other" section instead of disappearing.
 
 ## Performance: how heavy each row is
 
