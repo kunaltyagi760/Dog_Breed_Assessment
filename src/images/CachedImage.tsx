@@ -15,9 +15,12 @@ type Props = {
 };
 
 /**
- * expo-image backed by our own disk cache. Files on disk are already ours, so
- * expo-image only keeps decoded images in memory (no second copy on disk).
- * The style's background shows through as the placeholder while downloading.
+ * expo-image backed by our own disk cache. Every file is already on disk, so
+ * expo-image keeps no cache of its own: images are decoded from the local file
+ * when shown and released when their view goes away, which keeps memory flat no
+ * matter how much of the list or how many galleries have been viewed.
+ * Thumbnails skip the fade so a recycled list row doesn't flicker; the style's
+ * background shows through as the placeholder while a file downloads.
  */
 function CachedImageBase({
   url,
@@ -32,9 +35,9 @@ function CachedImageBase({
   return (
     <Image
       source={uri}
-      cachePolicy="memory"
+      cachePolicy="none"
       contentFit={contentFit}
-      transition={150}
+      transition={pinned ? 0 : 150}
       recyclingKey={recyclingKey}
       onError={onError}
       style={style}

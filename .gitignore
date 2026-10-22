@@ -43,3 +43,6 @@ yarn-error.*
 
 # test output
 coverage/
+
+# release artifacts (attach to a GitHub release instead of committing)
+/builds

@@ -1,6 +1,6 @@
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -13,6 +13,7 @@ import { FilterSheet } from '@/features/breeds/filters/FilterSheet';
 import { SectionHeader } from '@/features/breeds/SectionHeader';
 import { SyncStatus } from '@/features/breeds/SyncStatus';
 import { useFilteredBreeds } from '@/features/breeds/useFilteredBreeds';
+import { useListBenchmark } from '@/features/breeds/useListBenchmark';
 import { HydrationGate } from '@/features/shared/HydrationGate';
 import { useIsOnline } from '@/hooks/useIsOnline';
 import { useBreedStore } from '@/store/breedStore';
@@ -34,6 +35,8 @@ function BreedList() {
   const { isSyncing, error, refreshing, refresh } = useBreedSync();
   const { rows, stickyIndices, listKey, resultCount, totalCount } = useFilteredBreeds();
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const listRef = useRef<FlashListRef<BreedSectionRow>>(null);
+  useListBenchmark(listRef);
 
   const problem = lastError ?? error?.message ?? null;
   const activeCount = activeFilterCount(filters);
@@ -71,6 +74,7 @@ function BreedList() {
     content = (
       <FlashList
         key={listKey}
+        ref={listRef}
         testID="breed-list"
         data={rows}
         keyExtractor={keyExtractor}

@@ -5,14 +5,16 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "ios": "expo start --ios",
-    "android": "expo start --android",
+    "ios": "expo start --ios --go",
+    "android": "expo start --android --go",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "e2e": "maestro test .maestro"
+    "e2e": "maestro test .maestro",
+    "build:android": "expo prebuild --platform android --no-install && cd android && ./gradlew assembleRelease",
+    "build:ios": "expo run:ios --configuration Release --no-bundler"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -29,6 +31,7 @@
     "expo-router": "~58.0.24",
     "expo-sqlite": "~58.0.13",
     "expo-status-bar": "~58.0.3",
+    "expo-system-ui": "~58.0.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-error-boundary": "^6.1.6",

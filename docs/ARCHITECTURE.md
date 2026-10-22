@@ -16,7 +16,7 @@ flowchart LR
     UI -->|pull to refresh| RQ
 ```
 
-1. Launch. `useHydration` opens the database, runs migrations, and loads the slim list rows, the groups and the sync metadata into the store. The root layout shows a spinner until that finishes, which takes a few milliseconds once data is cached.
+1. Launch. `useHydration` opens the database, runs migrations, and loads the slim list rows, the groups and the sync metadata into the store. The image cache index is loaded first, then the store. The navigator is mounted from the first frame (so deep links always have a destination), and each screen sits behind a `HydrationGate` that shows a spinner until this finishes, which takes a few milliseconds once data is cached.
 2. Deciding to sync. `useBreedSync` registers one React Query query whose `queryFn` is the sync. React Query is seeded with the persisted `lastSyncedAt`, so it knows how old the data is, and it refetches on mount and on foreground (AppState) only when the data is stale. Stale means older than `EXPO_PUBLIC_STALE_AFTER_HOURS`, or the last attempt failed. Coming back online (NetInfo) always syncs, unless a sync succeeded within the last minute (`shouldSyncOnReconnect`). While offline, the app polls `NetInfo.refresh()` every 5 seconds, because the OS doesn't always announce that the network is back.
 3. Syncing. `syncBreeds` fetches groups and page 1 together. Page 1's `meta.pagination.last` says how many pages exist; pages 2 to N are fetched three at a time. Each request retries on its own with exponential backoff and jitter. Each page is normalized and written in its own transaction as soon as it arrives.
 4. Showing the result. After the sync, whether it succeeded or not, the store is reloaded from SQLite so the UI shows exactly what's saved.
@@ -118,7 +118,7 @@ flowchart LR
 
 The search text and the filter chips live in separate fields of `filterStore`. Typing replaces `query`, but the `filters` object stays the same, so components that only care about chips don't re-render on each keystroke.
 
-Rows get only an id. `BreedRow` reads its breed from the store and loads the 200x200 `thumb` through expo-image with `recyclingKey`, so a recycled cell doesn't flash the previous breed's photo, and with `cachePolicy="memory-disk"`.
+Rows get only an id. `BreedRow` reads its breed from the store and loads the 200x200 `thumb` from the local image cache through expo-image, with `recyclingKey` so a recycled cell never shows the previous breed's photo.
 
 ## Detail screen
 

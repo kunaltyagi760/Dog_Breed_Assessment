@@ -5,6 +5,7 @@ const empty = {
   pageSize: undefined,
   staleAfterHours: undefined,
   imageCacheMb: undefined,
+  listBenchmark: undefined,
 };
 
 describe('parseEnv', () => {
@@ -14,6 +15,7 @@ describe('parseEnv', () => {
       pageSize: 48,
       staleAfterHours: 6,
       imageCacheMb: 100,
+      listBenchmark: false,
     });
   });
 
@@ -25,6 +27,11 @@ describe('parseEnv', () => {
     const result = parseEnv({ ...empty, pageSize: '30', staleAfterHours: '0.5' });
     expect(result.pageSize).toBe(30);
     expect(result.staleAfterHours).toBe(0.5);
+  });
+
+  it('reads the benchmark switch', () => {
+    expect(parseEnv({ ...empty, listBenchmark: '1' }).listBenchmark).toBe(true);
+    expect(parseEnv({ ...empty, listBenchmark: 'false' }).listBenchmark).toBe(false);
   });
 
   it('rejects values the API would not accept', () => {

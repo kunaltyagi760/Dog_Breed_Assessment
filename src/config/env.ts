@@ -5,6 +5,7 @@ const envSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(1000).default(48),
   staleAfterHours: z.coerce.number().positive().default(6),
   imageCacheMb: z.coerce.number().positive().default(100),
+  listBenchmark: z.stringbool().default(false),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -20,6 +21,7 @@ export function parseEnv(raw: RawEnv): Env {
     pageSize: blankToUndefined(raw.pageSize),
     staleAfterHours: blankToUndefined(raw.staleAfterHours),
     imageCacheMb: blankToUndefined(raw.imageCacheMb),
+    listBenchmark: blankToUndefined(raw.listBenchmark),
   });
 }
 
@@ -29,4 +31,5 @@ export const env = parseEnv({
   pageSize: process.env.EXPO_PUBLIC_PAGE_SIZE,
   staleAfterHours: process.env.EXPO_PUBLIC_STALE_AFTER_HOURS,
   imageCacheMb: process.env.EXPO_PUBLIC_IMAGE_CACHE_MB,
+  listBenchmark: process.env.EXPO_PUBLIC_LIST_BENCHMARK,
 });

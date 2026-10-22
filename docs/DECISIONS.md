@@ -48,7 +48,7 @@ A sync runs when:
 
 I chose not to register an OS background task (`expo-background-task`). Breed data changes rarely, and iOS decides on its own when background tasks run, so it's a poor fit for "sync when the network returns". It would also add a native capability the app doesn't need. Syncing on reconnect while the app is open covers the user story. If this needed fresher data, OS background sync is the next step.
 
-Noticing the reconnect turned out to need help. NetInfo waits for the OS to announce network changes, and once it has reported "offline" it stops checking on its own. In the iOS simulator the "back online" announcement often never arrives, so the offline banner stayed up until the app was backgrounded. While the app thinks it's offline, it now calls `NetInfo.refresh()` every 5 seconds; that's one cheap native call, it only runs while offline, and it stops as soon as the connection is seen again.
+Reconnect detection doesn't rely only on the OS announcing that the network is back. NetInfo stops checking on its own once it has reported "offline", so while the app is offline (including when it was launched offline) it calls `NetInfo.refresh()` every 5 seconds. That's one cheap native call, it only runs while offline, and it stops as soon as the connection is seen again.
 
 ### What "last synced" means
 
@@ -83,13 +83,13 @@ Search runs 250 ms after the last keystroke. Filtering 283 rows is fast enough t
 
 The list is one flat array of group headers and breed rows, with the headers' positions passed to FlashList as `stickyHeaderIndices`. FlashList recycles headers and rows separately (`getItemType`), so a header cell is never reused for a breed. Groups are sorted by their short label, and a breed whose group isn't known goes into a trailing "Other" section instead of disappearing.
 
-The list is given a `key` built from the search, the filters and the dataset size, so every new result set mounts a fresh FlashList. I added this after a bug: FlashList only recalculates which header is pinned while you scroll, so when the list jumped from a handful of rows back to all 283 it could keep a stale header ("Working", the last group) pinned over the list. Remounting costs about 15 rows of rendering and removes that whole class of problem, along with the need to scroll back to the top by hand.
+The list is given a `key` built from the search, the filters and the dataset size, so every new result set mounts a fresh FlashList. FlashList recalculates which header is pinned only while scrolling, so a fresh list is the simplest way to guarantee the pinned header always matches the new data. Remounting costs about 15 rows of rendering, and it also means a new result set always starts from the top.
 
 ### Detail screen: saved copy first, then a single-breed refresh
 
 The detail screen reads the breed from SQLite and renders straight away, online or not. In parallel it calls `GET /breeds/:id`. When that answers, the new record is saved (payload and list row together) and replaces what's on screen, and the list row in the store is updated too, so going back to the list shows the same data. If the refresh fails, the saved copy simply stays; a breed that isn't saved at all gets an explicit "not saved on this device" or "breed not found" message instead of an endless spinner. The refresh counts as fresh for 10 minutes, so flicking between breeds doesn't re-download them.
 
-Both reads go through React Query, which needed one non-obvious setting: queries are paused while offline by default, and that includes a query that only reads SQLite. The saved-copy query uses `networkMode: 'always'`. A test caught this before it shipped as "detail screen spins forever offline".
+Both reads go through React Query. Queries are paused while offline by default, which would include a query that only reads SQLite, so the saved-copy query uses `networkMode: 'always'`.
 
 ### Traits as scales
 
@@ -161,11 +161,11 @@ FlashList recycles row views instead of mounting new ones as you scroll, and it 
 
 ### Images: expo-image plus a small cache I manage
 
-expo-image does the decoding, downsampling and memory caching (SDWebImage on iOS, Glide on Android), and it supports `recyclingKey` for list rows. What it doesn't have is a disk size limit, and the brief asks for one. So the images that need to be available offline go through a small LRU cache on top of expo-file-system, with the budget set by `EXPO_PUBLIC_IMAGE_CACHE_MB`.
+expo-image does the decoding and downsampling (SDWebImage on iOS, Glide on Android), and it supports `recyclingKey` for list rows. What it doesn't have is a disk size limit, and the brief asks for one. So the images that need to be available offline go through a small LRU cache on top of expo-file-system, with the budget set by `EXPO_PUBLIC_IMAGE_CACHE_MB`.
 
 Which variant is used where:
 
-- List rows use `thumb` (200×200 WebP) for each breed's first image. A sample came in at 9 to 27 KB each, so all 283 are around 5 MB. They're pinned and never evicted.
+- List rows use `thumb` (200×200 WebP) for each breed's first image. A sample came in at 9 to 27 KB each, so all 283 come to about 6 MB (5.9 MB measured). They're pinned and never evicted.
 - The detail header and gallery use `medium` (600px, roughly 75 to 120 KB).
 - The full-screen viewer upgrades to `large` (1200px, 165 to 320 KB), but only when the user opens an image full-screen.
 
@@ -175,7 +175,7 @@ Medium and large images count against the LRU budget. At the default 100 MB that
 
 How the cache works in practice:
 
-- Every image goes through `CachedImage`. If the file is on disk it's shown straight from there; if not, it's downloaded once into the documents directory (not the caches directory, which iOS may purge) and then shown. expo-image is told to keep only a memory cache, so there's never a second copy on disk.
+- Every image goes through `CachedImage`. If the file is on disk it's shown straight from there; if not, it's downloaded once into the documents directory (not the caches directory, which iOS may purge) and then shown. expo-image keeps no cache of its own (`cachePolicy="none"`): images are decoded from the local file when shown and released when their view goes away. There's never a second copy on disk, and memory stays bounded by what's on screen, which took peak memory from 177 MB to 123 MB (see PERFORMANCE.md).
 - The index (URL, file name, size, pinned, last used) lives in an `image_cache` table in the same SQLite database, added as migration 2. Its writes go through the same write queue as the breed writes, so they never land inside a breed transaction.
 - After launch and after each sync, all missing thumbnails download in the background, three at a time, so the whole list works offline rather than just the rows someone scrolled past. This is skipped on metered connections (NetInfo's `isConnectionExpensive`, i.e. cellular and hotspots); there, thumbnails only download as rows appear.
 - Thumbnails of breeds that disappear from the API are unpinned, not deleted, and then age out under the budget like any photo.
