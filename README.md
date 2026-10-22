@@ -1,15 +1,8 @@
 # Dog Breeds
 
-An offline-first React Native app for browsing all 283 breeds from the [Dog API](https://dogapi.dog/docs/api-v2). It syncs once, keeps everything on the device, and works fully offline after that, including the list thumbnails. Search and filter by group, size, coat, hypoallergenic and temperament, then open any breed for its facts, trait scores and a credited photo gallery.
+An offline-first React Native app for browsing all 283 breeds from the [Dog API](https://dogapi.dog/docs/api-v2). It syncs once, keeps everything on the device, and works fully offline after that, including the list thumbnails. Search and filter by group, size, coat, hypoallergenic and how good a breed is with children, other dogs and strangers, then open any breed for its facts, trait scores and a credited photo gallery.
 
 Built with Expo (SDK 58), TypeScript in strict mode, SQLite, Zustand, TanStack Query and FlashList.
-
-<p>
-  <img src="docs/screenshots/list-light.png" alt="Breed list in light mode" width="200" />
-  <img src="docs/screenshots/list-dark.png" alt="Breed list in dark mode" width="200" />
-  <img src="docs/screenshots/detail-traits.png" alt="Breed traits shown as scales" width="200" />
-  <img src="docs/screenshots/detail-gallery.png" alt="Photo gallery with attribution" width="200" />
-</p>
 
 ## Quick start
 
@@ -26,7 +19,7 @@ There's no native build step: the app runs in Expo Go, so the first launch takes
 | Command                           | What it does                                                                    |
 | --------------------------------- | ------------------------------------------------------------------------------- |
 | `npm run ios` / `npm run android` | Start Metro and open the app in Expo Go                                         |
-| `npm test`                        | Jest unit and component tests (36 suites, 202 tests)                            |
+| `npm test`                        | Jest unit and component tests (37 suites, 204 tests)                            |
 | `npm run typecheck`               | `tsc --noEmit` in strict mode                                                   |
 | `npm run lint`                    | ESLint (no `any`) and Prettier                                                  |
 | `npm run build:ios`               | Release build, installed on the booted iOS simulator                            |
@@ -37,7 +30,7 @@ Environment variables are all optional and documented in [`.env.example`](.env.e
 
 ## Builds
 
-Release builds are attached to the repository's [GitHub Releases](../../releases) rather than committed:
+Release builds are attached to the repository's [GitHub Releases](https://github.com/kunaltyagi760/Dog_Breed_Assessment/releases) rather than committed:
 
 | Build                               | File                                  | Install                                                 |
 | ----------------------------------- | ------------------------------------- | ------------------------------------------------------- |
@@ -70,7 +63,7 @@ The full design, including the SQLite schema, the sync rules for every failure c
 
 ## Key technical decisions
 
-**State management: Zustand + TanStack Query.** These are two different jobs. TanStack Query handles network concerns: retry with backoff, deduplicated requests, and refetching on reconnect and foreground, wired to NetInfo and AppState. Zustand holds the normalized breed data and the filters. Components subscribe to a slice, so a list row re-renders only when its own breed changes. I picked it over Redux Toolkit because, for one entity type and a filter object, RTK's ceremony isn't worth it. RTK Query would also duplicate what TanStack Query already does.
+**State management: Zustand + TanStack Query.** TanStack Query handles network concerns: retry with backoff, deduplicated requests, and refetching on reconnect and foreground, wired to NetInfo and AppState. Zustand holds the normalized breed data and the filters. Components subscribe to a slice, so a list row re-renders only when its own breed changes. I picked it over Redux Toolkit because, for one entity type and a filter object, RTK's ceremony isn't worth it. RTK Query would also duplicate what TanStack Query already does.
 
 **Database: expo-sqlite.** It runs in Expo Go, so the quick start needs no native build. It writes each page atomically in a transaction, and its real schema lets the list's columns stay separate from the full JSON record used by the detail screen. AsyncStorage would mean rewriting one 1.8 MB blob on every save. WatermelonDB and MMKV need a native build.
 
@@ -108,39 +101,27 @@ Bundle breakdown (2,477 KB of JS before bytecode compilation):
   <img src="docs/screenshots/memory-ios.svg" alt="Memory during the session, peaking at 123 MB" width="560" />
 </p>
 
+Left: FlashList's benchmark result after scrolling all 283 rows twice. Right: memory over the session, plotted from `phys_footprint` sampled every second.
+
 ## Screenshots
 
-| Breed list (light)                                                                     | Breed list (dark)                                                                    | Filters applied                                                                                                 |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| <img src="docs/screenshots/list-light.png" width="240" alt="Breed list, light mode" /> | <img src="docs/screenshots/list-dark.png" width="240" alt="Breed list, dark mode" /> | <img src="docs/screenshots/filters.png" width="240" alt="Filter sheet with Wire and Hypoallergenic selected" /> |
+| Breed list (light)                                                                     | Breed list (dark)                                                                    | Filters applied                                                                                                          |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| <img src="docs/screenshots/list-light.png" width="240" alt="Breed list, light mode" /> | <img src="docs/screenshots/list-dark.png" width="240" alt="Breed list, dark mode" /> | <img src="docs/screenshots/filtered.png" width="240" alt="Hypoallergenic wire-coated breeds with two filters applied" /> |
 
-| Filtered results                                                                                     | Detail: overview                                                                            | Detail: traits                                                                                |
-| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| <img src="docs/screenshots/filtered.png" width="240" alt="Four hypoallergenic wire-coated breeds" /> | <img src="docs/screenshots/detail-overview.png" width="240" alt="Affenpinscher overview" /> | <img src="docs/screenshots/detail-traits.png" width="240" alt="Affenpinscher trait scales" /> |
-
-| Detail: gallery                                                                               | Offline (Android)                                                                                                | Offline storage                                                                     |
-| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| <img src="docs/screenshots/detail-gallery.png" width="240" alt="Gallery with photo credit" /> | <img src="docs/screenshots/offline-android.png" width="240" alt="Offline banner over saved breeds on Android" /> | <img src="docs/screenshots/storage.png" width="240" alt="Offline storage screen" /> |
+| Detail: traits                                                                                | Detail: gallery                                                                               | Offline (Android)                                                                                                |
+| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| <img src="docs/screenshots/detail-traits.png" width="240" alt="Affenpinscher trait scales" /> | <img src="docs/screenshots/detail-gallery.png" width="240" alt="Gallery with photo credit" /> | <img src="docs/screenshots/offline-android.png" width="240" alt="Offline banner over saved breeds on Android" /> |
 
 ## Features
 
-- **Breed list:** all 283 breeds, grouped by breed group with sticky headers, thumbnails, and a one-line summary (size, coat, hypoallergenic).
-- **Search:** debounced, by name or other names. It ignores accents and case, and every word has to match.
-- **Filters:**
-  - multi-select breed group, size band and coat (short, medium, long, wire, hairless);
-  - hypoallergenic: any, yes or no;
-  - a minimum score for good with children, other dogs and strangers.
-  - The sheet shows a live result count.
-- **Detail screen:** three tabs.
-  - Overview: description, life span, male and female weight and height, origin, coat, other names, kennel clubs, sources.
-  - Traits: all 11 numeric traits as scales, plus temperament tags.
-  - Gallery: swipeable, with author, licence and source on every photo, and a full-screen viewer.
-- **Offline:**
-  - full data and thumbnails available without a connection;
-  - "Last synced" freshness label, offline and partial-failure banners;
-  - automatic sync when the connection returns.
-- **Light and dark themes:** follows the system, with a toggle in the header that's remembered.
-- **Accessibility:** labels and roles throughout. Rows grow with large text, trait bars announce their values, and sheets are modal for screen readers.
+- All 283 breeds, grouped by breed group with sticky headers, a thumbnail and a one-line summary (size, coat, hypoallergenic).
+- Debounced search by name or other names. Accents and case are ignored, and every word has to match.
+- Filters for breed group, size band and coat (short, medium, long, wire, hairless), hypoallergenic (any, yes, no), and a minimum score for good with children, other dogs and strangers. The sheet shows a live result count.
+- A detail screen with three tabs. Overview has the description, life span, male and female weight and height, origin, coat, other names, kennel clubs and sources. Traits shows all 11 numeric traits as scales plus temperament tags. Gallery is swipeable, credits the author, licence and source of every photo, and opens a full-screen viewer.
+- Everything works offline, thumbnails included, with a "Last synced" label, offline and partial-failure banners, and an automatic sync when the connection returns.
+- Light and dark themes that follow the system, with a toggle in the header that's remembered.
+- Screen reader labels and roles throughout. Rows grow with large text, trait bars announce their values, and sheets are modal.
 
 ## Testing
 
@@ -148,7 +129,7 @@ Bundle breakdown (2,477 KB of JS before bytecode compilation):
 npm test
 ```
 
-36 suites and 202 tests cover:
+37 suites and 204 tests cover:
 
 - the sync engine against a fake API (complete, partial, failed, malformed records, shifted pages);
 - the image cache's eviction rules;
@@ -156,7 +137,7 @@ npm test
 - the detail data hook;
 - the main components.
 
-The sync engine and the image cache take their dependencies (API, database, file system) as parameters, so they're tested without a device. CI runs typecheck, lint and tests on every push ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+The sync engine and the image cache take their dependencies (API, database, file system) as parameters, so they're tested without a device. CI runs typecheck, lint and tests on every push to `main` and on pull requests ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 `.maestro/browse-filter-detail.yaml` is an end-to-end flow for the critical path: list loads, a filter narrows it, search finds a breed, and its tabs open. Run it with `npm run e2e` while the app is open in the simulator. On Android, change `appId` to `host.exp.exponent` and run `adb reverse tcp:8081 tcp:8081` first.
 

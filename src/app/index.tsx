@@ -1,8 +1,8 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { RefreshControl, StyleSheet, View } from 'react-native';
 import { ErrorBoundary } from 'react-error-boundary';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { BoundaryFallback, Loader, SearchInput, StateMessage } from '@/components';
 import { activeFilterCount } from '@/domain/filters';

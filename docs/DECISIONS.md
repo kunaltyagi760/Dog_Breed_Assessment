@@ -1,6 +1,6 @@
 # Technical decisions
 
-This file records the choices I made, what I compared them against, and what each one costs. Where the brief left something open, I made the call myself and wrote it down here rather than guessing quietly in the code.
+This file records the choices I made, what I compared them against, and what each one costs. Where the brief left something open, I made the call myself, and the choice and the reason are written down here.
 
 ## The live API vs. the brief
 
@@ -14,9 +14,9 @@ I hit the API before writing any code, because the brief and the API docs disagr
 | Images per breed  | up to 9                | not stated | **1 to 10** (78 breeds have 10)            |
 | Coat lengths      | short/medium/long/wire | not stated | **short/medium/long/hairless**, one `null` |
 
-Other things worth knowing: 61 images have no `attribution.author`, 4 to 6 breeds have no height range, `origin.era` is empty for 104 breeds, and group names come with a suffix (`"Herding Group"`, `"Miscellaneous Class"`).
+Other things worth knowing: 61 images have no `attribution.author`, 4 breeds have no height data and 2 more have no female height, `origin.era` is empty for 104 breeds, and group names come with a suffix (`"Herding Group"`, `"Miscellaneous Class"`).
 
-My takeaway was that the client can't trust any hardcoded number. Several of the decisions below follow from that.
+So the app reads counts and page totals from the API instead of hardcoding them, and several of the decisions below follow from that.
 
 ## Data decisions
 
@@ -87,7 +87,7 @@ The list is given a `key` built from the search, the filters and the dataset siz
 
 ### Detail screen: saved copy first, then a single-breed refresh
 
-The detail screen reads the breed from SQLite and renders straight away, online or not. In parallel it calls `GET /breeds/:id`. When that answers, the new record is saved (payload and list row together) and replaces what's on screen, and the list row in the store is updated too, so going back to the list shows the same data. If the refresh fails, the saved copy simply stays; a breed that isn't saved at all gets an explicit "not saved on this device" or "breed not found" message instead of an endless spinner. The refresh counts as fresh for 10 minutes, so flicking between breeds doesn't re-download them.
+The detail screen reads the breed from SQLite and renders straight away, online or not. Once that saved copy has loaded, it calls `GET /breeds/:id`. When that answers, the new record is saved (payload and list row together) and replaces what's on screen, and the list row in the store is updated too, so going back to the list shows the same data. If the refresh fails, the saved copy simply stays; a breed that isn't saved at all gets an explicit "not saved on this device" or "breed not found" message instead of an endless spinner. The refresh counts as fresh for 10 minutes, so flicking between breeds doesn't re-download them.
 
 Both reads go through React Query. Queries are paused while offline by default, which would include a query that only reads SQLite, so the saved-copy query uses `networkMode: 'always'`.
 
@@ -105,7 +105,7 @@ Any virtualized list copes with 283 rows. The cost here comes from the size of e
 
 Passing that whole object to every list row hurts in a few ways. `React.memo` ends up comparing deep objects, and any new reference re-renders the row. FlashList hands recycled cells new props as you scroll, so large props mean more work per frame. And all 283 full objects stay in memory just to draw a name and a thumbnail.
 
-So the list never sees the full breed. When I save to SQLite, I also compute a slim list row: `id`, `name`, group label, the first `thumb` URL, size band, coat category, hypoallergenic, and the three "good with" scores the filters use. The list, search and filters work only on these rows. The full `payload` is read when the detail screen opens.
+So the list never sees the full breed. When I save to SQLite, I also compute a slim list row: `id`, `name`, group id, the first `thumb` URL, size band, coat category, hypoallergenic, the three "good with" scores the filters use, and a pre-folded search string. The list, search and filters work only on these rows. The full `payload` is read when the detail screen opens.
 
 The cost is a little duplication between the projection and the payload, plus a write path that has to keep them in sync. Both are built in the same function inside the same transaction, so they can't diverge.
 
@@ -133,13 +133,13 @@ SWR would work too, but hooking its reconnect and focus revalidation up to NetIn
 
 ### Client state: Zustand
 
-The breed data is stored normalized (`byId` + `allIds` for breeds, `byId` for groups), and the filters live in a separate small store. I picked Zustand because:
+The breed data is stored normalized (`byId` + `allIds` for both breeds and groups), and the filters live in a separate small store. I picked Zustand because:
 
 - selectors subscribe to a slice, so changing a filter doesn't re-render list rows whose data didn't change;
 - it's about 1 KB, with no providers or reducers;
-- the store can be read outside React, which the sync engine needs when it writes fresh data.
+- the store can be read and updated outside React, which the sync and detail-refresh code needs after writing fresh data.
 
-I seriously considered Redux Toolkit, since `createEntityAdapter` gives you a normalized cache out of the box. For one entity type and a filter object, though, the action/reducer/slice ceremony isn't worth it, and RTK Query would duplicate what TanStack Query already does. Context plus a reducer re-renders every consumer on each change, which matters on a 283-row list. Jotai would be fine, but a normalized entity map fits a single store more naturally than a set of atoms.
+I considered Redux Toolkit, since `createEntityAdapter` gives you a normalized cache out of the box. For one entity type and a filter object, though, the action/reducer/slice ceremony isn't worth it, and RTK Query would duplicate what TanStack Query already does. Context plus a reducer re-renders every consumer on each change, which matters on a 283-row list. Jotai would be fine, but a normalized entity map fits a single store more naturally than a set of atoms.
 
 ### Persistence: expo-sqlite
 
@@ -168,14 +168,13 @@ Which variant is used where:
 - List rows use `thumb` (200×200 WebP) for each breed's first image. A sample came in at 9 to 27 KB each, so all 283 come to about 6 MB (5.9 MB measured). They're pinned and never evicted.
 - The detail header and gallery use `medium` (600px, roughly 75 to 120 KB).
 - The full-screen viewer upgrades to `large` (1200px, 165 to 320 KB), but only when the user opens an image full-screen.
-
 - The original `url` is never downloaded. It can be several MB and no screen needs it.
 
 Medium and large images count against the LRU budget. At the default 100 MB that's on the order of a thousand medium images, more than enough for someone who browses a few dozen breeds.
 
 How the cache works in practice:
 
-- Every image goes through `CachedImage`. If the file is on disk it's shown straight from there; if not, it's downloaded once into the documents directory (not the caches directory, which iOS may purge) and then shown. expo-image keeps no cache of its own (`cachePolicy="none"`): images are decoded from the local file when shown and released when their view goes away. There's never a second copy on disk, and memory stays bounded by what's on screen, which took peak memory from 177 MB to 123 MB (see PERFORMANCE.md).
+- Every image goes through `CachedImage`. If the file is on disk it's shown straight from there; if not, it's downloaded once into the documents directory (not the caches directory, which iOS may purge) and then shown. expo-image keeps no cache of its own (`cachePolicy="none"`): images are decoded from the local file when shown and released when their view goes away. There's never a second copy on disk, and memory stays bounded by what's on screen (see PERFORMANCE.md).
 - The index (URL, file name, size, pinned, last used) lives in an `image_cache` table in the same SQLite database, added as migration 2. Its writes go through the same write queue as the breed writes, so they never land inside a breed transaction.
 - After launch and after each sync, all missing thumbnails download in the background, three at a time, so the whole list works offline rather than just the rows someone scrolled past. This is skipped on metered connections (NetInfo's `isConnectionExpensive`, i.e. cellular and hotspots); there, thumbnails only download as rows appear.
 - Thumbnails of breeds that disappear from the API are unpinned, not deleted, and then age out under the budget like any photo.
@@ -188,7 +187,7 @@ Every control has a role and a label a screen reader can use: rows read as "Beag
 
 ### Error handling
 
-`react-error-boundary` wraps the list, each detail tab and the gallery separately, so a broken gallery image doesn't take the Overview tab down with it. Expo Router's `ErrorBoundary` export on the root layout catches anything that escapes those.
+`react-error-boundary` wraps the list and each detail tab separately, so a broken gallery image doesn't take the Overview tab down with it. Expo Router's `ErrorBoundary` export on the root layout catches anything that escapes those.
 
 ## Code quality
 

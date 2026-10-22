@@ -156,6 +156,24 @@ describe('createImageCache', () => {
     expect(restored.peek('a')).not.toBeNull();
   });
 
+  it('can load its index again after a failed first attempt', async () => {
+    const load = jest
+      .fn<Promise<CacheEntry[]>, []>()
+      .mockRejectedValueOnce(new Error('database unavailable'))
+      .mockResolvedValue([{ url: 'a', fileName: 'f', bytes: 1, pinned: true, lastUsed: 1 }]);
+    const cache = createImageCache({
+      index: { load, save: async () => {}, remove: async () => {} },
+      files: { uriFor: (n) => `file:///cache/${n}`, download: async () => 1, remove: () => {} },
+      budgetBytes: KB,
+    });
+
+    await expect(cache.init()).rejects.toThrow('database unavailable');
+    await cache.init();
+
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(cache.peek('a')).toBe('file:///cache/f');
+  });
+
   it('forget removes both the file and the index entry', async () => {
     const { cache, files, saved } = setup();
     await cache.ensure('a');

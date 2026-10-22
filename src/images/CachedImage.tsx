@@ -1,6 +1,6 @@
 import { Image, type ImageContentFit } from 'expo-image';
 import { memo } from 'react';
-import type { StyleProp, ImageStyle } from 'react-native';
+import type { ImageStyle, StyleProp } from 'react-native';
 
 import { useCachedImage } from './useCachedImage';
 
@@ -15,7 +15,7 @@ type Props = {
 };
 
 /**
- * expo-image backed by our own disk cache. Every file is already on disk, so
+ * expo-image backed by our own disk cache. Because files come from that cache,
  * expo-image keeps no cache of its own: images are decoded from the local file
  * when shown and released when their view goes away, which keeps memory flat no
  * matter how much of the list or how many galleries have been viewed.

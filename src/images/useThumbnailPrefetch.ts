@@ -3,9 +3,9 @@ import { onlineManager } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
 import { isMeteredConnection } from '@/api/nativeQueryEvents';
+import type { BreedListItem } from '@/domain/types';
 import { useIsOnline } from '@/hooks/useIsOnline';
 import { useBreedStore, type Normalized } from '@/store/breedStore';
-import type { BreedListItem } from '@/domain/types';
 
 import { imageCache } from './index';
 

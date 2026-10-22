@@ -11,17 +11,9 @@ type Props = {
   variant?: 'primary' | 'ghost';
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
-  accessibilityHint?: string;
 };
 
-function ButtonBase({
-  label,
-  onPress,
-  variant = 'primary',
-  disabled,
-  style,
-  accessibilityHint,
-}: Props) {
+function ButtonBase({ label, onPress, variant = 'primary', disabled, style }: Props) {
   const { colors } = useTheme();
   const isPrimary = variant === 'primary';
 
@@ -29,7 +21,6 @@ function ButtonBase({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled }}
-      accessibilityHint={accessibilityHint}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [

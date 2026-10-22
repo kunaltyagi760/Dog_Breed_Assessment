@@ -13,9 +13,9 @@ Measured on 22 Oct 2026 against the brief's targets. Everything here can be repr
 
 ## Test setup
 
-- **iOS:** release build (`-configuration Release`, Hermes bytecode, no dev tools) on the iPhone 15 Pro simulator (iOS 17.2) on an Apple M2 Pro Mac.
-- **Android:** Android 17 emulator (arm64, 1344×2992 display), used for functional screenshots. Android release measurements are run the same way with the commands in [Android](#android).
-- **Data:** all 283 breeds already synced, all thumbnails in the image cache, so the runs measure the app rather than the network.
+- iOS: release build (`-configuration Release`, Hermes bytecode, no dev tools) on the iPhone 15 Pro simulator (iOS 17.2) on an Apple M2 Pro Mac.
+- Android: Android 17 emulator (arm64, 1344×2992 display), used for functional screenshots. No Android performance numbers are reported; the commands to collect them from a release APK are in [Android](#android).
+- Data: all 283 breeds already synced, all thumbnails in the image cache, so the runs measure the app rather than the network.
 
 Simulator and emulator numbers aren't phone numbers. A simulator uses the Mac's CPU and memory allocator, so absolute values differ from a real device, but they're consistent from run to run, which is what matters for comparing changes.
 
@@ -54,14 +54,12 @@ Where the 2,477 KB of JavaScript comes from:
 | unmapped / runtime glue                 | 215 KB | 8.6%  |
 | everything else                         | 194 KB | 7.8%  |
 
-The one surprise is zod. Of its 494 KB, 269 KB is error-message translations for about 40 languages, which the app never shows. Validation itself is about 225 KB. Two ways to win most of that back, if bundle size became a priority:
+zod is the second-largest package. Of its 494 KB, 269 KB is error-message translations for about 40 languages, which the app never shows. Validation itself is about 225 KB. Two ways to win most of that back, if bundle size became a priority:
 
-- switch the four schema files to `zod/mini`, which tree-shakes per function and doesn't pull the locales in;
+- switch the files that use zod to `zod/mini`, which tree-shakes per function and doesn't pull the locales in;
 - or move to Valibot, which is built for that from the start.
 
-Both are mechanical changes confined to `src/api/schemas.ts`, `src/db/rows.ts`, `src/config/env.ts` and `src/images/sqliteCacheIndex.ts`. I left zod in place because the brief values readable validation and the bundle is already Hermes bytecode, which is memory-mapped and doesn't need to be parsed at startup.
-
-The app's own code is 71 KB of the bundle. Nearly everything else is framework.
+Both are mechanical changes confined to the five files that build schemas (`src/api/schemas.ts`, `src/db/rows.ts`, `src/db/sqliteRepository.ts`, `src/config/env.ts`, `src/images/sqliteCacheIndex.ts`) plus a type import in `src/api/dogApi.ts`. I left zod in place because its schemas read clearly and the bundle is already Hermes bytecode, which is memory-mapped and doesn't need to be parsed at startup.
 
 ## Startup
 
@@ -81,7 +79,7 @@ Five cold starts of the release build, with the 283 breeds and all thumbnails al
 | 5          | 0.63 s                                | 1.06 s                      |
 | **Median** | **0.63 s**                            | **1.06 s**                  |
 
-The first frame after the launch animation already contains the full list. The app never waits for the network on launch: it reads the slim list rows from SQLite (a single `SELECT` of 283 rows) and the image-cache index, and a background sync only starts if the data is older than six hours. The 0.4 s between "list" and "fully drawn" is the thumbnails being decoded from local files during iOS's launch zoom.
+The first frame after the launch animation already contains the full list. The app never waits for the network on launch: it reads the slim list rows from SQLite (a single `SELECT` of 283 rows) and the image-cache index, and a background sync only starts if the data is older than six hours or the last sync failed. The 0.4 s between "list" and "fully drawn" is the thumbnails being decoded from local files during iOS's launch zoom.
 
 ## Scrolling: 60 fps
 
@@ -101,7 +99,7 @@ Two passes over all 283 rows and 9 group headers, release build:
 | Minimum | 60.0          |
 | Maximum | 60.7          |
 
-The minimum never dropped below 60: no frame of the run took longer than the 16.7 ms budget on the JS thread. The UI thread isn't the risk here. With the New Architecture, scrolling itself is native, and what can drop frames is JS work during scroll (FlashList recycling cells and rendering rows), which is what this benchmark measures. Three things keep that work small:
+The JS frame rate never dropped below 60 in any sampling interval of the run. The UI thread isn't the risk here. With the New Architecture, scrolling itself is native, and what can drop frames is JS work during scroll (FlashList recycling cells and rendering rows), which is what this benchmark measures. Three things keep that work small:
 
 - rows receive only an id and read a slim, pre-computed row from the store, never the full breed (see "Performance: how heavy each row is" in DECISIONS.md);
 - headers and rows are separate item types, so FlashList never turns a header cell into a breed row;
@@ -133,7 +131,7 @@ The session: launch, scroll to the end of the list and back, open a breed and sw
 
 ### What keeps it flat: decoding images on demand
 
-Image memory is the biggest variable in this app. A 200×200 thumbnail is 160 KB once decoded, a 600px gallery photo up to 1.4 MB, and a 1200px full-screen photo up to 5.8 MB. Every file is already on disk in the app's image cache, so expo-image is configured not to keep its own decoded copies (`cachePolicy="none"`). An image is decoded from its local file when its view appears and released when the view goes away. Decoding a 10 to 30 KB WebP thumbnail from local storage takes a few milliseconds, so scrolling stays smooth while memory stays bounded by what's on screen.
+Image memory is the biggest variable in this app. A 200×200 thumbnail is 160 KB once decoded, a 600px gallery photo up to 1.4 MB, and a 1200px full-screen photo up to 5.8 MB. Every file is already on disk in the app's image cache, so expo-image is configured not to keep its own decoded copies (`cachePolicy="none"`). An image is decoded from its local file when its view appears and released when the view goes away. Decoding a 9 to 27 KB WebP thumbnail from local storage takes a few milliseconds, so scrolling stays smooth while memory stays bounded by what's on screen.
 
 The same session with expo-image's memory cache enabled, for comparison:
 

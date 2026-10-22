@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, useWindowDimensions } from 'react-native';
 import { ErrorBoundary } from 'react-error-boundary';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 import {
   TabBar,
   TabView,

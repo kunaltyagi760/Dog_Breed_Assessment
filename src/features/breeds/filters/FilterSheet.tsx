@@ -3,7 +3,7 @@ import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText, Button, IconButton } from '@/components';
-import { type HypoallergenicFilter, type SocialTrait } from '@/domain/filters';
+import type { HypoallergenicFilter, SocialTrait } from '@/domain/filters';
 import { COAT_LABELS, SIZE_LABELS } from '@/domain/labels';
 import { SIZE_BANDS, type CoatCategory } from '@/domain/types';
 import { useBreedStore } from '@/store/breedStore';

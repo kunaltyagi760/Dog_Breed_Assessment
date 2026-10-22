@@ -35,10 +35,16 @@ describe('FilterSheet', () => {
     });
   });
 
-  it('lists the breed groups by label', async () => {
+  it('lists the breed groups sorted by label', async () => {
     await renderSheet();
-    expect(screen.getByRole('button', { name: 'Herding' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Toy' })).toBeOnTheScreen();
+
+    // The store holds Toy first; the sheet should still show Herding before Toy.
+    const chips = screen.getAllByRole('button');
+    const herding = chips.indexOf(screen.getByRole('button', { name: 'Herding' }));
+    const toy = chips.indexOf(screen.getByRole('button', { name: 'Toy' }));
+
+    expect(herding).toBeGreaterThanOrEqual(0);
+    expect(herding).toBeLessThan(toy);
   });
 
   it('toggles a group chip in the store', async () => {

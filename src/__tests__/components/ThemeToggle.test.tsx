@@ -15,5 +15,6 @@ describe('ThemeToggle', () => {
     expect(setColorScheme).toHaveBeenCalledWith('dark');
     expect(useThemeStore.getState().preference).toBe('dark');
     expect(Storage.getItemSync('theme-preference')).toBe('dark');
+    setColorScheme.mockRestore();
   });
 });

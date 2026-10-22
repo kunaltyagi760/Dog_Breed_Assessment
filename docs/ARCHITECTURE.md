@@ -25,16 +25,17 @@ flowchart LR
 
 ```
 src/
-  app/          Expo Router screens (_layout, index, breeds/[id])
+  app/          Expo Router screens: _layout, index (list), breeds/[id], storage
   api/          HTTP client, zod schemas for API responses, React Query setup
-  db/           SQLite connection, migrations, repository
-  domain/       Breed types and the rules that derive size band, coat category, etc.
-  sync/         The sync engine and the hooks that run it
-  store/        Zustand stores (breed data, theme preference)
-  features/     Screen-specific components (breeds list, sync status)
+  db/           SQLite connection, migrations, repository, shared write queue
+  domain/       Breed types, derived fields (size band, coat category), filters, sections
+  sync/         Sync engine, single-breed refresh, sync policy and the hooks that run them
+  images/       Disk image cache, CachedImage, thumbnail prefetch
+  store/        Zustand stores (breeds, filters, theme preference)
+  features/     Screen-specific components: breeds/ (list, filters), breedDetail/ (tabs, gallery), shared/
   components/   Shared UI used across screens
-  hooks/        Generic hooks (online status, ticking clock, hydration)
-  lib/          Small pure helpers (retry, backoff, concurrency, text)
+  hooks/        Generic hooks (online status, ticking clock, hydration, debounce)
+  lib/          Small pure helpers (retry, backoff, concurrency, text, formatting)
   theme/        Colour tokens for light and dark, spacing, type sizes
 ```
 
@@ -44,18 +45,18 @@ The dependency direction is `app → features → store / sync → db / api → 
 
 `syncBreeds` takes its dependencies as arguments (`api`, `repo`, `pageSize`, a clock and retry settings). The tests run it against a fake server and an in-memory repository, and the app runs it against the real API and SQLite.
 
-| Situation                                           | What happens                                                                                                                                                 |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Every page and the groups load                      | Status `complete`. Breeds that weren't in this sync are deleted, and `lastSyncedAt` is updated.                                                              |
-| Some pages fail after retries                       | Status `partial`. The pages that worked are saved, nothing is deleted, and `failedPages` plus `lastError` are stored. The banner says how many pages failed. |
-| Groups fail                                         | Status `partial`. Breeds are still saved, and the old group labels stay.                                                                                     |
-| Total in `meta.records` is higher than what arrived | Status `partial`, nothing is deleted. Usually means records shifted between pages mid-sync.                                                                  |
-| Page 1 fails                                        | Throws `SyncFailedError`, records the error, and leaves the cache untouched.                                                                                 |
-| A single record fails validation                    | Skipped and counted. The rest of its page is kept.                                                                                                           |
+| Situation                                                      | What happens                                                                                                                                                 |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Every page and the groups load                                 | Status `complete`. Breeds that weren't in this sync are deleted, and `lastSyncedAt` is updated.                                                              |
+| Some pages fail after retries                                  | Status `partial`. The pages that worked are saved, nothing is deleted, and `failedPages` plus `lastError` are stored. The banner says how many pages failed. |
+| Groups fail                                                    | Status `partial`. Breeds are still saved, and the old group labels stay.                                                                                     |
+| Total in `meta.pagination.records` is higher than what arrived | Status `partial`, nothing is deleted. Usually means records shifted between pages mid-sync.                                                                  |
+| Page 1 fails                                                   | Throws `SyncFailedError`, records the error, and leaves the cache untouched.                                                                                 |
+| A single record fails validation                               | Skipped and counted. The rest of its page is kept.                                                                                                           |
 
 Deletion uses the sync start time: every breed written in this pass gets `synced_at = startedAt`, so after a full pass, `DELETE ... WHERE synced_at < startedAt` removes exactly the breeds the API no longer returns. Nothing gets deleted after a partial pass, because a missing breed might be on a page that failed.
 
-Writes go through a small queue in the repository. Pages download in parallel, but SQLite transactions on one connection can't overlap.
+Writes go through a shared queue (`src/db/writeQueue.ts`) used by the repository and the image-cache index. Pages download in parallel, but SQLite transactions on one connection can't overlap.
 
 ## SQLite schema
 
@@ -72,7 +73,7 @@ breeds (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   group_id TEXT,
-  thumb_url TEXT,                  -- first image's 200x200 thumb
+  thumb_url TEXT,                  -- first image's 200x200 thumb (medium if no thumb)
   size_band TEXT,                  -- small | medium | large | giant
   coat_category TEXT NOT NULL,     -- short | medium | long | wire | hairless | unknown
   hypoallergenic INTEGER NOT NULL,

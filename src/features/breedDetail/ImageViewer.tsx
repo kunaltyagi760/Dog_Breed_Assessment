@@ -16,8 +16,8 @@ type Props = {
 };
 
 /**
- * Full-screen photos. This is the only place the `large` (1200px) variant is
- * loaded. Mount it only while open, so it always starts on the tapped photo.
+ * Full-screen photos, the one screen that asks for the `large` (1200px) variant.
+ * Mount it only while open, so it always starts on the tapped photo.
  */
 export function ImageViewer({ images, initialIndex, onClose }: Props) {
   const { colors } = useTheme();

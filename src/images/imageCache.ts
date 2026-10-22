@@ -156,10 +156,17 @@ export function createImageCache({ index, files, budgetBytes, now = Date.now }: 
   return {
     /** Loads the persisted index. Safe to call more than once. */
     init(): Promise<void> {
-      initPromise ??= index.load().then((loaded) => {
-        for (const entry of loaded) entries.set(entry.url, entry);
-        notify(loaded.map((entry) => entry.url));
-      });
+      initPromise ??= index.load().then(
+        (loaded) => {
+          for (const entry of loaded) entries.set(entry.url, entry);
+          notify(loaded.map((entry) => entry.url));
+        },
+        (error: unknown) => {
+          // Let a later call try again instead of caching the failure.
+          initPromise = null;
+          throw error;
+        },
+      );
       return initPromise;
     },
 

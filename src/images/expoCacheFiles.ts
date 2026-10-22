@@ -19,7 +19,7 @@ function cacheDirectory() {
 }
 
 export const expoCacheFiles: CacheFiles = {
-  // A plain string join: this runs on every list row render, so no native calls.
+  // Runs on every list row render; after the first call it's a plain string join.
   uriFor(fileName) {
     cacheDirectory();
     return `${directoryUri}${fileName}`;

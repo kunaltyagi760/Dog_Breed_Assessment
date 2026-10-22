@@ -93,7 +93,10 @@ export function createSqliteBreedRepository(
       const rows = await db.getAllAsync<unknown>(
         'SELECT id, name, label FROM groups ORDER BY name',
       );
-      return z.array(groupRowSchema).parse(rows);
+      return rows.flatMap((row) => {
+        const result = groupRowSchema.safeParse(row);
+        return result.success ? [result.data] : [];
+      });
     },
 
     async getSyncMeta() {

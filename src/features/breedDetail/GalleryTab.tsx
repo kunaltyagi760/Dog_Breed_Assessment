@@ -17,7 +17,9 @@ function GalleryTabBase({ breed }: Props) {
   const [index, setIndex] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const images = breed.images;
-  const current = images[index];
+  // A background refresh can bring back fewer photos than were there when swiping started.
+  const position = Math.min(index, Math.max(images.length - 1, 0));
+  const current = images[position];
 
   const closeViewer = useCallback(() => setViewerIndex(null), []);
 
@@ -40,7 +42,7 @@ function GalleryTabBase({ breed }: Props) {
 
         <View style={styles.info}>
           <AppText variant="subtitle">
-            {index + 1} of {images.length}
+            {position + 1} of {images.length}
           </AppText>
           {current ? <PhotoCredit attribution={current.attribution} /> : null}
           <AppText variant="caption" tone="muted">

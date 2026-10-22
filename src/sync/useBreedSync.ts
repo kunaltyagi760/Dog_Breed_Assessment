@@ -56,7 +56,8 @@ export function useBreedSync() {
     if (!onlineManager.isOnline()) return;
     setRefreshing(true);
     try {
-      await refetch();
+      // Join a sync that's already running instead of starting a second one next to it.
+      await refetch({ cancelRefetch: false });
     } finally {
       setRefreshing(false);
     }

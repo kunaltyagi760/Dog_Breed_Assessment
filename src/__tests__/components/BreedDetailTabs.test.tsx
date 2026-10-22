@@ -4,10 +4,10 @@ import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { EMPTY_SYNC_META } from '@/db/repository';
+import { toBreed } from '@/domain/normalize';
 import { GalleryTab } from '@/features/breedDetail/GalleryTab';
 import { OverviewTab } from '@/features/breedDetail/OverviewTab';
 import { TraitsTab } from '@/features/breedDetail/TraitsTab';
-import { toBreed } from '@/domain/normalize';
 import { useBreedStore } from '@/store/breedStore';
 
 import { breedResource } from '../helpers/fixtures';
@@ -98,6 +98,7 @@ describe('GalleryTab', () => {
     await fireEvent.press(screen.getByText('CC BY-SA 3.0'));
 
     expect(openURL).toHaveBeenCalledWith('https://creativecommons.org/licenses/by-sa/3.0/');
+    openURL.mockRestore();
   });
 
   it('credits an unknown author rather than dropping the credit', async () => {

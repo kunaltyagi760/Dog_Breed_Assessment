@@ -1,5 +1,5 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import { createDogApi, type DogApi } from '@/api/dogApi';
@@ -79,7 +79,11 @@ describe('useBreedDetail', () => {
 
     const { result } = await renderHook(() => useBreedDetail('gsd'), { wrapper });
 
-    await waitFor(() => expect(result.current.breed?.name).toBe('Saved name'));
+    // Wait for the refresh to actually fail, not just for the saved copy to load.
+    await waitFor(() => expect(server.requests).toHaveLength(1));
+    await act(async () => {});
+
+    expect(result.current.breed?.name).toBe('Saved name');
     expect(result.current.status).toBe('ready');
   });
 
