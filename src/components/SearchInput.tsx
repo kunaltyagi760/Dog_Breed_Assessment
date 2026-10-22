@@ -10,9 +10,10 @@ type Props = {
   value: string;
   onChangeText: (text: string) => void;
   placeholder: string;
+  testID?: string;
 };
 
-function SearchInputBase({ value, onChangeText, placeholder }: Props) {
+function SearchInputBase({ value, onChangeText, placeholder, testID }: Props) {
   const { colors } = useTheme();
   return (
     <View style={[styles.container, { backgroundColor: colors.surfaceMuted }]}>
@@ -23,6 +24,8 @@ function SearchInputBase({ value, onChangeText, placeholder }: Props) {
         placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
         accessibilityLabel={placeholder}
+        accessibilityRole="search"
+        testID={testID}
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"

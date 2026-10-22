@@ -88,6 +88,14 @@ sync_meta (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL              -- JSON: lastSyncedAt, lastAttemptAt, failedPages, lastError
 )
+
+image_cache (                      -- migration 2
+  url TEXT PRIMARY KEY,
+  file_name TEXT NOT NULL,         -- hash of the URL, under <documents>/image-cache/
+  bytes INTEGER NOT NULL,
+  pinned INTEGER NOT NULL,         -- 1 for list thumbnails, never evicted
+  last_used INTEGER NOT NULL       -- drives least-recently-used eviction of photos
+)
 ```
 
 The typed columns are the list projection, so the list, search and filters never parse `payload`. `payload` holds the API record rather than the normalized `Breed`, so normalization rules can change without a data migration: the detail screen re-runs the same schema and `toBreed` on read. There are no secondary indexes, because the list always reads all ~283 rows.
@@ -131,6 +139,24 @@ flowchart LR
 The saved payload is re-validated with the same zod schema and run through the same `toBreed` as during a sync, so the detail screen and the list can't interpret a record differently.
 
 Tabs use `react-native-tab-view`. Each tab sits inside its own error boundary, and the Gallery tab is lazy. `ImagePager` is shared by the gallery (`medium`, cover) and the full-screen viewer (`large`, contain), and keeps only the visible photo and its neighbours mounted.
+
+## Image cache
+
+```mermaid
+flowchart LR
+    C[CachedImage] -->|useCachedImage| IC{imageCache.peek}
+    IC -->|on disk| F[file:// URI]
+    IC -->|missing + online| D[ensure: download once]
+    D --> F
+    D --> IDX[(image_cache table)]
+    D -->|photos only| E[evict least recently used over budget]
+    P[useThumbnailPrefetch] -->|after launch / sync, unmetered| T[prefetchPinned: all thumbnails]
+    T --> D
+```
+
+`createImageCache` (in `src/images/imageCache.ts`) holds the index in memory, so `peek` is a synchronous map lookup and list rows can call it on every render. Its two dependencies are passed in: a `CacheIndexStore` (SQLite in the app, an in-memory fake in tests) and `CacheFiles` (expo-file-system in the app). Components subscribe per URL, so a finished download re-renders only the images showing that URL.
+
+The index is loaded during hydration, before the store is marked ready. If rows rendered first, every one of them would think its thumbnail was missing and download it again.
 
 ## State
 

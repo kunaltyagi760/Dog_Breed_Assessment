@@ -19,3 +19,21 @@ jest.mock('@expo/vector-icons/Ionicons', () => {
   const { Text } = require('react-native');
   return { __esModule: true, default: ({ name }) => createElement(Text, null, name) };
 });
+
+// The real image cache needs expo-file-system and SQLite. Tests get the same
+// cache logic with an empty index and downloads that never finish, so images
+// simply stay on their placeholder.
+jest.mock('@/images', () => {
+  const { createImageCache } = jest.requireActual('@/images/imageCache');
+  return {
+    imageCache: createImageCache({
+      index: { load: async () => [], save: async () => {}, remove: async () => {} },
+      files: {
+        uriFor: (fileName) => `file:///image-cache/${fileName}`,
+        download: () => new Promise(() => {}),
+        remove: () => {},
+      },
+      budgetBytes: 100 * 1024 * 1024,
+    }),
+  };
+});

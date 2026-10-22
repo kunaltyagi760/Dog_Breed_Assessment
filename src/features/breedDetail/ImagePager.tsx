@@ -1,4 +1,4 @@
-import { Image, type ImageContentFit } from 'expo-image';
+import type { ImageContentFit } from 'expo-image';
 import { useCallback } from 'react';
 import {
   FlatList,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import type { BreedImage } from '@/domain/types';
+import { CachedImage } from '@/images/CachedImage';
 import { useTheme } from '@/theme';
 
 import { imageUrl, type ImageVariant } from './images';
@@ -61,12 +62,15 @@ export function ImagePager({
         accessibilityLabel={`Photo ${index + 1} of ${images.length}`}
         accessibilityHint={onPressImage ? 'Opens the photo full screen' : undefined}
       >
-        <Image
-          source={imageUrl(item, variant)}
-          cachePolicy="memory-disk"
+        <CachedImage
+          url={imageUrl(item, variant)}
           contentFit={contentFit}
-          transition={150}
-          style={{ width, height, backgroundColor: colors.surfaceMuted }}
+          // A contained photo is letterboxed; a placeholder colour there reads as grey bars.
+          style={{
+            width,
+            height,
+            backgroundColor: contentFit === 'cover' ? colors.surfaceMuted : 'transparent',
+          }}
         />
       </Pressable>
     ),

@@ -30,8 +30,11 @@ export function ImageViewer({ images, initialIndex, onClose }: Props) {
     setSize({ width: nativeEvent.layout.width, height: nativeEvent.layout.height });
 
   return (
-    <Modal visible animationType="fade" onRequestClose={onClose}>
+    // statusBarTranslucent: on Android the modal otherwise starts below the status
+    // bar, and the inset padding below would add a second gap.
+    <Modal visible animationType="fade" statusBarTranslucent onRequestClose={onClose}>
       <View
+        accessibilityViewIsModal
         style={[
           styles.screen,
           {

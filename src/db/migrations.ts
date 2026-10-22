@@ -31,6 +31,15 @@ export const MIGRATIONS: readonly string[] = [
     value TEXT NOT NULL
   );
   `,
+  `
+  CREATE TABLE image_cache (
+    url TEXT PRIMARY KEY NOT NULL,
+    file_name TEXT NOT NULL,
+    bytes INTEGER NOT NULL,
+    pinned INTEGER NOT NULL,
+    last_used INTEGER NOT NULL
+  );
+  `,
 ];
 
 export type MigratableDatabase = Pick<

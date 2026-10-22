@@ -12,6 +12,7 @@ import {
   recordToParams,
   rowToListItem,
 } from './rows';
+import type { WriteQueue } from './writeQueue';
 
 const UPSERT_BREED = `
   INSERT OR REPLACE INTO breeds (
@@ -26,16 +27,12 @@ const groupRowSchema = z.object({ id: z.string(), name: z.string(), label: z.str
 
 const SYNC_META_KEY = 'sync';
 
-export function createSqliteBreedRepository(db: SQLiteDatabase): BreedRepository {
-  // Pages are fetched in parallel, but transactions on one connection must not
-  // overlap, so every write goes through this queue.
-  let writeQueue: Promise<unknown> = Promise.resolve();
-  function serialWrite<T>(task: () => Promise<T>): Promise<T> {
-    const run = writeQueue.then(task, task);
-    writeQueue = run.catch(() => undefined);
-    return run;
-  }
-
+// Pages are fetched in parallel, but writes are funnelled through `serialWrite`
+// so their transactions never overlap.
+export function createSqliteBreedRepository(
+  db: SQLiteDatabase,
+  serialWrite: WriteQueue,
+): BreedRepository {
   return {
     saveGroups(groups: Group[]) {
       return serialWrite(() =>

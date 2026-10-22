@@ -8,7 +8,11 @@ export function Loader({ message }: { message?: string }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ActivityIndicator color={colors.primary} />
+      <ActivityIndicator
+        color={colors.primary}
+        accessibilityLabel={message ?? 'Loading'}
+        accessibilityLiveRegion="polite"
+      />
       {message ? <AppText tone="muted">{message}</AppText> : null}
     </View>
   );

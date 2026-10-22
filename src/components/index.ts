@@ -6,6 +6,7 @@ export * from './ErrorFallback';
 export * from './IconButton';
 export * from './LinkText';
 export * from './Loader';
+export * from './ProgressBar';
 export * from './SearchInput';
 export * from './Section';
 export * from './StateMessage';

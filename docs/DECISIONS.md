@@ -169,9 +169,22 @@ Which variant is used where:
 - The detail header and gallery use `medium` (600px, roughly 75 to 120 KB).
 - The full-screen viewer upgrades to `large` (1200px, 165 to 320 KB), but only when the user opens an image full-screen.
 
+- The original `url` is never downloaded. It can be several MB and no screen needs it.
+
 Medium and large images count against the LRU budget. At the default 100 MB that's on the order of a thousand medium images, more than enough for someone who browses a few dozen breeds.
 
-- The original `url` is never downloaded. It can be several MB and no screen needs it.
+How the cache works in practice:
+
+- Every image goes through `CachedImage`. If the file is on disk it's shown straight from there; if not, it's downloaded once into the documents directory (not the caches directory, which iOS may purge) and then shown. expo-image is told to keep only a memory cache, so there's never a second copy on disk.
+- The index (URL, file name, size, pinned, last used) lives in an `image_cache` table in the same SQLite database, added as migration 2. Its writes go through the same write queue as the breed writes, so they never land inside a breed transaction.
+- After launch and after each sync, all missing thumbnails download in the background, three at a time, so the whole list works offline rather than just the rows someone scrolled past. This is skipped on metered connections (NetInfo's `isConnectionExpensive`, i.e. cellular and hotspots); there, thumbnails only download as rows appear.
+- Thumbnails of breeds that disappear from the API are unpinned, not deleted, and then age out under the budget like any photo.
+- A file that fails to decode is dropped and downloaded again once per session. If our download fails while online, the image falls back to loading straight from the network, so a cache problem never means a missing photo.
+- The "Offline storage" screen (cloud icon in the list header) shows how many thumbnails are saved, how much of the photo budget is used, and can clear cached photos. It's mostly there so the behaviour can be checked by hand.
+
+### Accessibility
+
+Every control has a role and a label a screen reader can use: rows read as "Beagle, Medium · Short coat" with a hint that they open details, group headers announce their count, chips report whether they're selected, trait bars and the storage bars are `progressbar`s with values, the offline and error banners are `alert`s, and the filter sheet and photo viewer mark themselves as modal so VoiceOver doesn't wander behind them. List rows use `minHeight` rather than a fixed height, so they grow with large system font sizes instead of clipping. Decorative thumbnails are hidden from screen readers; the detail photo has a description.
 
 ### Error handling
 
@@ -185,4 +198,6 @@ Medium and large images count against the LRU budget. At the default 100 MB that
 
 ## Testing
 
-Jest (`jest-expo`) with React Native Testing Library. The sync engine takes its fetch function as a parameter, so tests pass a stub instead of mocking the network globally. I chose that over MSW because it keeps the tests fast and deterministic, and it pushed the engine into a cleaner shape. The bonus E2E test uses Maestro rather than Detox: a Maestro flow is a short YAML file, and it runs against Expo Go without a custom build.
+Jest (`jest-expo`) with React Native Testing Library. The sync engine takes its fetch function as a parameter, so tests pass a stub instead of mocking the network globally. I chose that over MSW because it keeps the tests fast and deterministic, and it pushed the engine into a cleaner shape. The bonus E2E test uses Maestro rather than Detox: a Maestro flow is a short YAML file, and it runs against Expo Go without a custom build. The flow (`.maestro/browse-filter-detail.yaml`) covers the critical path: the list loads, a group filter narrows it, clearing restores it, search finds a breed, and its three tabs open. It finds elements by the same accessibility labels a screen reader uses, plus a few `testID`s.
+
+The image cache is tested through injected fakes for its index and file system (budget, eviction order, pinning, deduplicated downloads), and Jest swaps the real cache for one whose downloads never finish, so component tests don't touch the file system.

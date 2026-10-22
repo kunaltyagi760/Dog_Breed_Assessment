@@ -19,3 +19,9 @@ export function formatSourceName(source: string): string {
 export function isWebUrl(value: string | null | undefined): value is string {
   return !!value && /^https?:\/\//i.test(value);
 }
+
+/** "820 KB", "5.1 MB". */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(0, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}

@@ -3,9 +3,10 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { ErrorFallback, Loader, StateMessage } from '@/components';
 import { BreedTabs } from '@/features/breedDetail/BreedTabs';
 import { useBreedDetail } from '@/features/breedDetail/useBreedDetail';
+import { HydrationGate } from '@/features/shared/HydrationGate';
 import { useBreedStore } from '@/store/breedStore';
 
-export default function BreedDetailScreen() {
+function BreedDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { breed, status, error, retry } = useBreedDetail(id);
   // The list row is already in memory, so the title shows before SQLite answers.
@@ -36,5 +37,13 @@ export default function BreedDetailScreen() {
       <Stack.Screen options={{ title: breed?.name ?? listName ?? '' }} />
       {content}
     </>
+  );
+}
+
+export default function BreedDetailScreen() {
+  return (
+    <HydrationGate>
+      <BreedDetail />
+    </HydrationGate>
   );
 }

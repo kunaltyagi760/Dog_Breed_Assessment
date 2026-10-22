@@ -2,7 +2,12 @@ import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
 import { onlineManager } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react-native';
 
-import { isOnline, OFFLINE_RECHECK_MS, useNativeQueryEvents } from '@/api/nativeQueryEvents';
+import {
+  isMeteredConnection,
+  isOnline,
+  OFFLINE_RECHECK_MS,
+  useNativeQueryEvents,
+} from '@/api/nativeQueryEvents';
 
 const refresh = jest.mocked(NetInfo.refresh);
 
@@ -40,6 +45,17 @@ describe('useNativeQueryEvents', () => {
     await unmount();
   });
 
+  it('starts checking when the app is already offline at mount', async () => {
+    // e.g. launched without a connection: there is no online -> offline change to observe.
+    onlineManager.setOnline(false);
+
+    const { unmount } = await renderHook(() => useNativeQueryEvents());
+    await act(() => jest.advanceTimersByTime(OFFLINE_RECHECK_MS * 2));
+
+    expect(refresh).toHaveBeenCalledTimes(2);
+    await unmount();
+  });
+
   it('does not poll while online', async () => {
     const { unmount } = await renderHook(() => useNativeQueryEvents());
 
@@ -69,5 +85,17 @@ describe('isOnline', () => {
     expect(isOnline(state(true, null))).toBe(true);
     expect(isOnline(state(true, false))).toBe(false);
     expect(isOnline(state(false, null))).toBe(false);
+  });
+});
+
+describe('isMeteredConnection', () => {
+  it('treats expensive connections as metered', () => {
+    expect(isMeteredConnection({ details: { isConnectionExpensive: true } } as NetInfoState)).toBe(
+      true,
+    );
+    expect(isMeteredConnection({ details: { isConnectionExpensive: false } } as NetInfoState)).toBe(
+      false,
+    );
+    expect(isMeteredConnection({ details: null } as NetInfoState)).toBe(false);
   });
 });

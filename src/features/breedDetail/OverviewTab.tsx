@@ -1,17 +1,18 @@
-import { Image } from 'expo-image';
 import { memo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { AppText, LinkText, Section, TagList } from '@/components';
 import { sizeBandFor } from '@/domain/derive';
 import { SIZE_LABELS } from '@/domain/labels';
 import type { Breed } from '@/domain/types';
+import { CachedImage } from '@/images/CachedImage';
 import { formatRange } from '@/lib/format';
 import { useBreedStore } from '@/store/breedStore';
 import { radius, spacing, useTheme } from '@/theme';
 
 import { DetailRow } from './DetailRow';
 import { imageUrl } from './images';
+import { TabScrollView } from './TabScrollView';
 
 type Props = { breed: Breed };
 
@@ -31,13 +32,10 @@ function OverviewTabBase({ breed }: Props) {
   const { country, region, era } = breed.origin;
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <TabScrollView>
       {heroUrl ? (
-        <Image
-          source={heroUrl}
-          cachePolicy="memory-disk"
-          contentFit="cover"
-          transition={200}
+        <CachedImage
+          url={heroUrl}
           style={[styles.hero, { backgroundColor: colors.surfaceMuted }]}
           accessibilityLabel={`Photo of a ${breed.name}`}
         />
@@ -99,14 +97,13 @@ function OverviewTabBase({ breed }: Props) {
           </View>
         </Section>
       ) : null}
-    </ScrollView>
+    </TabScrollView>
   );
 }
 
 export const OverviewTab = memo(OverviewTabBase);
 
 const styles = StyleSheet.create({
-  content: { padding: spacing.lg, gap: spacing.xl },
   hero: { width: '100%', aspectRatio: 4 / 3, borderRadius: radius.lg },
   sources: { gap: spacing.sm },
 });

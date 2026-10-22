@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { getBreedRepository } from '@/db/database';
+import { imageCache } from '@/images';
 import { useBreedStore } from '@/store/breedStore';
 import { hydrateStore } from '@/sync/hydrate';
 
@@ -12,8 +13,15 @@ export function useHydration() {
 
   useEffect(() => {
     let cancelled = false;
+    // A broken image index only costs offline photos, so it must not block the app.
+    const cacheReady = imageCache.init().catch(() => undefined);
     getBreedRepository()
-      .then(hydrateStore)
+      .then(async (repo) => {
+        // The image index has to be loaded before rows render, or every row
+        // would think its thumbnail is missing and download it again.
+        await cacheReady;
+        await hydrateStore(repo);
+      })
       .catch((reason: unknown) => {
         if (!cancelled) setError(reason);
       });

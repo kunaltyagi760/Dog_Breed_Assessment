@@ -1,11 +1,12 @@
 import { memo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Section, TagList } from '@/components';
 import { TRAIT_LABELS } from '@/domain/labels';
 import type { Breed, ScoreTrait } from '@/domain/types';
 import { spacing } from '@/theme';
 
+import { TabScrollView } from './TabScrollView';
 import { TraitMeter } from './TraitMeter';
 
 type Props = { breed: Breed };
@@ -27,7 +28,7 @@ function TraitsTabBase({ breed }: Props) {
   const minutes = breed.exerciseMinutes;
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <TabScrollView>
       {TRAIT_GROUPS.map(({ title, traits }, index) => (
         <Section
           key={title}
@@ -62,13 +63,12 @@ function TraitsTabBase({ breed }: Props) {
       <Section title="Temperament">
         <TagList tags={breed.temperament} emptyText="No temperament listed" />
       </Section>
-    </ScrollView>
+    </TabScrollView>
   );
 }
 
 export const TraitsTab = memo(TraitsTabBase);
 
 const styles = StyleSheet.create({
-  content: { padding: spacing.lg, gap: spacing.xl },
   meters: { gap: spacing.lg },
 });

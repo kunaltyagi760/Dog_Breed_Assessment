@@ -13,6 +13,7 @@ import { FilterSheet } from '@/features/breeds/filters/FilterSheet';
 import { SectionHeader } from '@/features/breeds/SectionHeader';
 import { SyncStatus } from '@/features/breeds/SyncStatus';
 import { useFilteredBreeds } from '@/features/breeds/useFilteredBreeds';
+import { HydrationGate } from '@/features/shared/HydrationGate';
 import { useIsOnline } from '@/hooks/useIsOnline';
 import { useBreedStore } from '@/store/breedStore';
 import { useFilterStore } from '@/store/filterStore';
@@ -22,7 +23,7 @@ import { spacing, useTheme } from '@/theme';
 const keyExtractor = (row: BreedSectionRow) => row.key;
 const getItemType = (row: BreedSectionRow) => row.type;
 
-export default function BreedListScreen() {
+function BreedList() {
   const { colors } = useTheme();
   const lastSyncedAt = useBreedStore((state) => state.syncMeta.lastSyncedAt);
   const lastError = useBreedStore((state) => state.syncMeta.lastError);
@@ -70,6 +71,7 @@ export default function BreedListScreen() {
     content = (
       <FlashList
         key={listKey}
+        testID="breed-list"
         data={rows}
         keyExtractor={keyExtractor}
         getItemType={getItemType}
@@ -123,6 +125,7 @@ export default function BreedListScreen() {
             value={query}
             onChangeText={setQuery}
             placeholder="Search by name or other names"
+            testID="breed-search"
           />
           <FilterBar
             activeCount={activeCount}
@@ -137,6 +140,14 @@ export default function BreedListScreen() {
       <ErrorBoundary FallbackComponent={BoundaryFallback}>{content}</ErrorBoundary>
       <FilterSheet visible={filtersOpen} resultCount={resultCount} onClose={closeFilters} />
     </View>
+  );
+}
+
+export default function BreedListScreen() {
+  return (
+    <HydrationGate>
+      <BreedList />
+    </HydrationGate>
   );
 }
 

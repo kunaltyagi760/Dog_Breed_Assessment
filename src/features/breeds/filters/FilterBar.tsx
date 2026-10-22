@@ -31,6 +31,7 @@ function FilterBarBase({
         accessibilityRole="button"
         accessibilityLabel={hasFilters ? `Filters, ${activeCount} active` : 'Filters'}
         onPress={onOpenFilters}
+        testID="filters-button"
         style={({ pressed }) => [
           styles.filterButton,
           { borderColor: hasFilters ? colors.primary : colors.border },

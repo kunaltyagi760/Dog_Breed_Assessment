@@ -11,7 +11,8 @@
     "test:watch": "jest --watch",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "e2e": "maestro test .maestro"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

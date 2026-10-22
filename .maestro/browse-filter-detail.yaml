@@ -1,0 +1,41 @@
+# Critical path: list loads, a filter narrows it, search finds a breed,
+# and its detail tabs open. Runs against Expo Go with Metro on port 8081:
+#   npm run ios      (in one terminal)
+#   npm run e2e      (in another)
+appId: host.exp.Exponent
+name: Browse, filter, search and open a breed
+---
+- launchApp
+- openLink: exp://127.0.0.1:8081
+
+# First launch downloads all 283 breeds, so allow time for the sync.
+- extendedWaitUntil:
+    visible:
+      id: breed-search
+    timeout: 120000
+
+# Filter to the Toy group
+- tapOn:
+    id: filters-button
+- tapOn: Toy
+- tapOn: Show .* breeds
+- assertVisible: Filters, 1 active
+- assertVisible: Toy, .* breeds
+
+# Clearing brings the whole list back, from the top
+- tapOn: Clear
+- assertVisible: Foundation Stock Service, .* breeds
+
+# Search and open a breed
+- tapOn:
+    id: breed-search
+- inputText: beagle
+- tapOn: Beagle, .*
+
+# Detail tabs
+- assertVisible: Overview
+- assertVisible: 'Life span: .*'
+- tapOn: Traits
+- assertVisible: 'Energy: .*'
+- tapOn: Gallery .*
+- assertVisible: 1 of .*

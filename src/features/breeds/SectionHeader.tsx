@@ -14,7 +14,9 @@ function SectionHeaderBase({ title, count }: Props) {
   return (
     // Opaque background because the header sticks on top of scrolling rows.
     <View
+      accessible
       accessibilityRole="header"
+      accessibilityLabel={`${title}, ${count} ${count === 1 ? 'breed' : 'breeds'}`}
       style={[
         styles.header,
         { backgroundColor: colors.background, borderBottomColor: colors.border },

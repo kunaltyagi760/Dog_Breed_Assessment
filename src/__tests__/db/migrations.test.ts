@@ -22,6 +22,15 @@ describe('migrate', () => {
     expect(executed.at(-1)).toBe(`PRAGMA user_version = ${MIGRATIONS.length}`);
   });
 
+  it('upgrades an existing database without recreating its tables', async () => {
+    const { db, executed } = fakeDatabase(1);
+
+    await migrate(db);
+
+    expect(executed[0]).toContain('CREATE TABLE image_cache');
+    expect(executed.some((sql) => sql.includes('CREATE TABLE breeds'))).toBe(false);
+  });
+
   it('does nothing when the schema is current', async () => {
     const { db, executed } = fakeDatabase(MIGRATIONS.length);
     await migrate(db);

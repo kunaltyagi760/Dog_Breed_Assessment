@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import type { ReactElement } from 'react';
 import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -18,6 +19,10 @@ const metrics = {
 
 const breed = toBreed(breedResource('gsd', { name: 'German Shepherd Dog' }));
 
+// The tabs pad themselves for the home indicator, which needs safe-area metrics.
+const renderInSafeArea = (ui: ReactElement) =>
+  render(<SafeAreaProvider initialMetrics={metrics}>{ui}</SafeAreaProvider>);
+
 beforeAll(() => {
   useBreedStore.getState().setSnapshot({
     breeds: [],
@@ -28,7 +33,7 @@ beforeAll(() => {
 
 describe('OverviewTab', () => {
   it('shows the facts the brief asks for', async () => {
-    await render(<OverviewTab breed={breed} />);
+    await renderInSafeArea(<OverviewTab breed={breed} />);
 
     expect(screen.getByText('A dog.')).toBeOnTheScreen();
     expect(screen.getByLabelText('Group: Herding')).toBeOnTheScreen();
@@ -42,13 +47,13 @@ describe('OverviewTab', () => {
 
   it('marks missing values as Unknown instead of hiding them', async () => {
     // The fixture's origin region is blank, as it is for 50 real breeds.
-    await render(<OverviewTab breed={breed} />);
+    await renderInSafeArea(<OverviewTab breed={breed} />);
     expect(screen.getByLabelText('Region: Unknown')).toBeOnTheScreen();
   });
 
   it('handles a breed with no description or other names', async () => {
     const sparse = toBreed(breedResource('sparse', { description: null, other_names: [] }));
-    await render(<OverviewTab breed={sparse} />);
+    await renderInSafeArea(<OverviewTab breed={sparse} />);
 
     expect(screen.getByText('No description available.')).toBeOnTheScreen();
     expect(screen.getByText('No other names')).toBeOnTheScreen();
@@ -57,7 +62,7 @@ describe('OverviewTab', () => {
 
 describe('TraitsTab', () => {
   it('renders all 11 traits as scales plus temperament', async () => {
-    await render(<TraitsTab breed={breed} />);
+    await renderInSafeArea(<TraitsTab breed={breed} />);
 
     expect(screen.getAllByRole('progressbar')).toHaveLength(11);
     expect(screen.getByLabelText('Energy: 4/5')).toBeOnTheScreen();
@@ -67,7 +72,7 @@ describe('TraitsTab', () => {
 
   it('says "No data" for a missing score', async () => {
     const noTraits = toBreed(breedResource('none', { traits: null }));
-    await render(<TraitsTab breed={noTraits} />);
+    await renderInSafeArea(<TraitsTab breed={noTraits} />);
 
     expect(screen.getByLabelText('Energy: No data')).toBeOnTheScreen();
     expect(screen.getByText('No temperament listed')).toBeOnTheScreen();
@@ -75,12 +80,7 @@ describe('TraitsTab', () => {
 });
 
 describe('GalleryTab', () => {
-  const renderGallery = (subject = breed) =>
-    render(
-      <SafeAreaProvider initialMetrics={metrics}>
-        <GalleryTab breed={subject} />
-      </SafeAreaProvider>,
-    );
+  const renderGallery = (subject = breed) => renderInSafeArea(<GalleryTab breed={subject} />);
 
   it('shows the position and the photo credit', async () => {
     await renderGallery();

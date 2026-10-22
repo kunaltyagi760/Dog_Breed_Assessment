@@ -72,7 +72,7 @@ export function FilterSheet({ visible, resultCount, onClose }: Props) {
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={[styles.sheet, { backgroundColor: colors.background }]}>
+      <View accessibilityViewIsModal style={[styles.sheet, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <AppText variant="title">Filters</AppText>
           <IconButton icon="close" accessibilityLabel="Close filters" onPress={onClose} />

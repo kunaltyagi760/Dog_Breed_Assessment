@@ -1,9 +1,9 @@
-import { Image } from 'expo-image';
 import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components';
 import { breedSummary } from '@/domain/labels';
+import { CachedImage } from '@/images/CachedImage';
 import { useBreedStore } from '@/store/breedStore';
 import { radius, spacing, useTheme } from '@/theme';
 
@@ -26,6 +26,7 @@ function BreedRowBase({ id, onPress }: Props) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={summary ? `${breed.name}, ${summary}` : breed.name}
+      accessibilityHint="Opens breed details"
       onPress={() => onPress(id)}
       style={({ pressed }) => [
         styles.row,
@@ -33,15 +34,12 @@ function BreedRowBase({ id, onPress }: Props) {
         pressed && { backgroundColor: colors.surfaceMuted },
       ]}
     >
-      <Image
-        source={breed.thumbUrl}
+      <CachedImage
+        url={breed.thumbUrl}
+        pinned
         // Without this a recycled cell briefly shows the previous breed's photo.
         recyclingKey={id}
-        cachePolicy="memory-disk"
-        contentFit="cover"
-        transition={150}
         style={[styles.thumb, { backgroundColor: colors.surfaceMuted }]}
-        accessible={false}
       />
       <View style={styles.text}>
         <AppText numberOfLines={1} style={styles.name}>
@@ -64,7 +62,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    height: THUMB_SIZE + spacing.md * 2,
+    // minHeight, not height: rows grow with large accessibility font sizes.
+    minHeight: THUMB_SIZE + spacing.md * 2,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
