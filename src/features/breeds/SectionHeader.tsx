@@ -9,6 +9,9 @@ type Props = {
   count: number;
 };
 
+/** The list uses this to keep Android's pull-to-refresh spinner clear of a pinned header. */
+export const SECTION_HEADER_HEIGHT = 48;
+
 function SectionHeaderBase({ title, count }: Props) {
   const { colors } = useTheme();
   return (
@@ -38,6 +41,7 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
+    minHeight: SECTION_HEADER_HEIGHT,
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,

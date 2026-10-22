@@ -10,7 +10,7 @@ import type { BreedSectionRow } from '@/domain/sections';
 import { BreedRow } from '@/features/breeds/BreedRow';
 import { FilterBar } from '@/features/breeds/filters/FilterBar';
 import { FilterSheet } from '@/features/breeds/filters/FilterSheet';
-import { SectionHeader } from '@/features/breeds/SectionHeader';
+import { SECTION_HEADER_HEIGHT, SectionHeader } from '@/features/breeds/SectionHeader';
 import { SyncStatus } from '@/features/breeds/SyncStatus';
 import { useFilteredBreeds } from '@/features/breeds/useFilteredBreeds';
 import { useListBenchmark } from '@/features/breeds/useListBenchmark';
@@ -87,6 +87,8 @@ function BreedList() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={retry}
+            // Android only: start the spinner below the pinned group header, not under it.
+            progressViewOffset={SECTION_HEADER_HEIGHT}
             tintColor={colors.primary}
             colors={[colors.primary]}
           />
