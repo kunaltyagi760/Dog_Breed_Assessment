@@ -1,8 +1,10 @@
 # Critical path: list loads, a filter narrows it, search finds a breed,
 # and its detail tabs open. Runs against Expo Go with Metro on port 8081:
-#   npm run ios      (in one terminal)
-#   npm run e2e      (in another)
-appId: host.exp.Exponent
+#   npm run ios          (in one terminal)
+#   npm run e2e:ios      (in another)
+# On Android use npm run android and npm run e2e:android instead.
+# APP_ID is Expo Go's id, which differs by platform; the scripts pass it in.
+appId: ${APP_ID}
 name: Browse, filter, search and open a breed
 ---
 - launchApp
@@ -22,8 +24,12 @@ name: Browse, filter, search and open a breed
 - assertVisible: Filters, 1 active
 - assertVisible: Toy, .* breeds
 
-# Clearing brings the whole list back, from the top
-- tapOn: Clear
+# Clearing brings the whole list back, from the top. This goes through the
+# sheet because Expo Go's floating dev button can sit over the bar's "Clear".
+- tapOn:
+    id: filters-button
+- tapOn: Clear all
+- tapOn: Show 283 breeds
 - assertVisible: Foundation Stock Service, .* breeds
 
 # Search and open a breed

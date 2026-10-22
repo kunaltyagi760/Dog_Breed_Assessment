@@ -24,7 +24,7 @@ There's no native build step: the app runs in Expo Go, so the first launch takes
 | `npm run lint`                    | ESLint (no `any`) and Prettier                                                  |
 | `npm run build:ios`               | Release build, installed on the booted iOS simulator                            |
 | `npm run build:android`           | Release APK at `android/app/build/outputs/apk/release/app-release.apk`          |
-| `npm run e2e`                     | Maestro end-to-end flow (needs [Maestro](https://maestro.mobile.dev) installed) |
+| `npm run e2e:ios` / `e2e:android` | Maestro end-to-end flow (needs [Maestro](https://maestro.mobile.dev) installed) |
 
 Environment variables are all optional and documented in [`.env.example`](.env.example): API base URL, page size (48), when data counts as stale (6 hours), the photo cache budget (100 MB), and a switch for the list benchmark.
 
@@ -34,7 +34,7 @@ Release builds are attached to the repository's [GitHub Releases](https://github
 
 | Build                               | File                                  | Install                                                 |
 | ----------------------------------- | ------------------------------------- | ------------------------------------------------------- |
-| iOS simulator (arm64)               | `DogBreeds-ios-simulator.zip` (15 MB) | Unzip, then `xcrun simctl install booted DogBreeds.app` |
+| iOS simulator (arm64)               | `DogBreeds-ios-simulator.zip` (18 MB) | Unzip, then `xcrun simctl install booted DogBreeds.app` |
 | Android APK (all CPU types, 106 MB) | `app-release.apk`                     | `adb install app-release.apk`, or open it on a device   |
 
 To produce them yourself, run `npm run build:ios` or `npm run build:android`. Both run `expo prebuild` first. The generated `ios/` and `android/` folders are git-ignored, because Expo recreates them from `app.json`.
@@ -139,7 +139,7 @@ npm test
 
 The sync engine and the image cache take their dependencies (API, database, file system) as parameters, so they're tested without a device. CI runs typecheck, lint and tests on every push to `main` and on pull requests ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
-`.maestro/browse-filter-detail.yaml` is an end-to-end flow for the critical path: list loads, a filter narrows it, search finds a breed, and its tabs open. Run it with `npm run e2e` while the app is open in the simulator. On Android, change `appId` to `host.exp.exponent` and run `adb reverse tcp:8081 tcp:8081` first.
+`.maestro/browse-filter-detail.yaml` is an end-to-end flow for the critical path: list loads, a filter narrows it, search finds a breed, and its tabs open. With the app open in Expo Go, run `npm run e2e:ios` or `npm run e2e:android`. They differ only in the Expo Go app id and, on Android, an `adb reverse` so the emulator can reach Metro. The scripts name the platform explicitly, so it doesn't matter if a simulator and an emulator are both running.
 
 ## Project structure
 

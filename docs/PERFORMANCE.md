@@ -162,7 +162,7 @@ Expo Go isn't a fair stand-in for these. Its process carries Expo Go's own nativ
 
 | Build                                           | Size                        |
 | ----------------------------------------------- | --------------------------- |
-| iOS release, simulator (arm64), `DogBreeds.app` | 50 MB on disk, 15 MB zipped |
+| iOS release, simulator (arm64), `DogBreeds.app` | 57 MB on disk, 18 MB zipped |
 | JS bundle inside it (Hermes bytecode)           | 3.9 MB                      |
 
 An App Store build would be smaller: App Store builds are thinned per device and compressed, and the simulator build is uncompressed.

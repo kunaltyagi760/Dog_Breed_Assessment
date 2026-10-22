@@ -12,7 +12,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "e2e": "maestro test .maestro",
+    "e2e:ios": "maestro --platform ios test -e APP_ID=host.exp.Exponent .maestro",
+    "e2e:android": "adb reverse tcp:8081 tcp:8081 && maestro --platform android test -e APP_ID=host.exp.exponent .maestro",
     "build:android": "expo prebuild --platform android --no-install && cd android && ./gradlew assembleRelease",
     "build:ios": "expo run:ios --configuration Release --no-bundler"
   },
@@ -21,16 +22,16 @@
     "@react-native-community/netinfo": "12.0.1",
     "@shopify/flash-list": "2.3.2",
     "@tanstack/react-query": "^5.104.5",
-    "expo": "~58.0.17",
+    "expo": "~58.0.16",
     "expo-asset": "~58.0.17",
     "expo-constants": "~58.0.12",
     "expo-file-system": "~58.0.10",
     "expo-font": "~58.0.9",
     "expo-image": "~58.0.16",
-    "expo-linking": "~58.0.14",
-    "expo-router": "~58.0.25",
+    "expo-linking": "~58.0.13",
+    "expo-router": "~58.0.24",
     "expo-sqlite": "~58.0.13",
-    "expo-status-bar": "~58.0.4",
+    "expo-status-bar": "~58.0.3",
     "expo-system-ui": "~58.0.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -52,8 +53,21 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.7",
     "jest": "~30.5.2",
-    "jest-expo": "~58.0.12",
+    "jest-expo": "~58.0.11",
     "prettier": "^3.9.10",
     "typescript": "~6.0.3"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "expo",
+        "expo-asset",
+        "expo-constants",
+        "expo-linking",
+        "expo-router",
+        "expo-status-bar",
+        "jest-expo"
+      ]
+    }
   }
 }
