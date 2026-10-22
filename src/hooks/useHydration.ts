@@ -5,7 +5,7 @@ import { imageCache } from '@/images';
 import { useBreedStore } from '@/store/breedStore';
 import { hydrateStore } from '@/sync/hydrate';
 
-/** Opens the database and loads cached breeds before the first screen renders. */
+/** Opens the database and loads the saved breeds and the image index into memory. */
 export function useHydration() {
   const hydrated = useBreedStore((state) => state.hydrated);
   const [error, setError] = useState<unknown>(null);

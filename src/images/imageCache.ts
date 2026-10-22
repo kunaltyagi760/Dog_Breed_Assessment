@@ -54,7 +54,7 @@ export function fileNameFor(url: string): string {
 /**
  * A disk cache for remote images with a size budget.
  *
- * Thumbnails are pinned: all 283 come to about 5 MB and the list needs every
+ * Thumbnails are pinned: all 283 come to about 6 MB and the list needs every
  * one of them offline. Everything else (gallery and full-screen photos) counts
  * against `budgetBytes`, and the least recently viewed files go first.
  */
@@ -256,5 +256,3 @@ export function createImageCache({ index, files, budgetBytes, now = Date.now }: 
     },
   };
 }
-
-export type ImageCache = ReturnType<typeof createImageCache>;

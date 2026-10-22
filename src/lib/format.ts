@@ -15,7 +15,6 @@ export function formatSourceName(source: string): string {
     .join(' ');
 }
 
-/** Only web links are opened; anything else in the data is shown as plain text. */
 export function isWebUrl(value: string | null | undefined): value is string {
   return !!value && /^https?:\/\//i.test(value);
 }

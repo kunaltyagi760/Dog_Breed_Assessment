@@ -9,7 +9,7 @@ import type { Breed } from '@/domain/types';
 import { useBreedStore } from '@/store/breedStore';
 import { refreshBreed } from '@/sync/refreshBreed';
 
-export const breedKeys = {
+const breedKeys = {
   saved: (id: string) => ['breed', id, 'saved'] as const,
   refresh: (id: string) => ['breed', id, 'refresh'] as const,
 };

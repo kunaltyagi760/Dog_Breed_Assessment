@@ -10,7 +10,7 @@ import { hydrateStore } from './hydrate';
 import { shouldSyncOnReconnect } from './syncPolicy';
 import { syncBreeds } from './syncBreeds';
 
-export const BREED_SYNC_KEY = ['breeds', 'sync'] as const;
+const BREED_SYNC_KEY = ['breeds', 'sync'] as const;
 
 const STALE_MS = env.staleAfterHours * 60 * 60 * 1000;
 async function runSync() {
