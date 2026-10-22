@@ -39,10 +39,10 @@ Environment variables are all optional and documented in [`.env.example`](.env.e
 
 Release builds are attached to the repository's [GitHub Releases](../../releases) rather than committed:
 
-| Build                           | File                                  | Install                                                 |
-| ------------------------------- | ------------------------------------- | ------------------------------------------------------- |
-| iOS simulator (arm64)           | `DogBreeds-ios-simulator.zip` (15 MB) | Unzip, then `xcrun simctl install booted DogBreeds.app` |
-| Android APK (arm64-v8a, x86_64) | `app-release.apk`                     | `adb install app-release.apk`, or open it on a device   |
+| Build                               | File                                  | Install                                                 |
+| ----------------------------------- | ------------------------------------- | ------------------------------------------------------- |
+| iOS simulator (arm64)               | `DogBreeds-ios-simulator.zip` (15 MB) | Unzip, then `xcrun simctl install booted DogBreeds.app` |
+| Android APK (all CPU types, 106 MB) | `app-release.apk`                     | `adb install app-release.apk`, or open it on a device   |
 
 To produce them yourself, run `npm run build:ios` or `npm run build:android`. Both run `expo prebuild` first. The generated `ios/` and `android/` folders are git-ignored, because Expo recreates them from `app.json`.
 
